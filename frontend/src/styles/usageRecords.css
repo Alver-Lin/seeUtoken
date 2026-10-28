@@ -1,0 +1,98 @@
+.usage-records {
+  overflow: hidden;
+}
+
+.quota-page .usage-records .panel-head {
+  padding: 14px 18px 8px;
+}
+
+.usage-records .table-wrap {
+  padding: 4px 14px 12px;
+}
+
+.usage-records .table-wrap .ant-table {
+  width: 100%;
+}
+
+.usage-records .table-wrap .ant-table.ant-table-small .ant-table-thead > tr > th {
+  padding: 9px 10px;
+  color: var(--sut-secondary, #64748b);
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--sut-inset, #f8fafc);
+}
+
+.usage-records .table-wrap .ant-table.ant-table-small .ant-table-tbody > tr > td {
+  padding: 10px;
+  color: var(--sut-text, #1f2937);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.usage-records .table-wrap .ant-table.ant-table-small .ant-table-tbody > tr + tr > td {
+  border-top: 1px solid var(--sut-track, #f1f5f9);
+}
+
+.usage-records .table-wrap .ant-pagination.ant-table-pagination {
+  margin: 12px 2px 0;
+}
+
+.usage-records .table-wrap .ant-table.ant-table-small th.col-kind,
+.usage-records .table-wrap .ant-table.ant-table-small td.col-kind {
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.usage-records .table-wrap .ant-table.ant-table-small th.col-token,
+.usage-records .table-wrap .ant-table.ant-table-small td.col-token {
+  padding-right: 12px;
+}
+
+.usage-records .token-cell {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.35;
+}
+
+.usage-records .token-part {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+  color: var(--sut-text, #0f172a);
+  font-size: 13px;
+}
+
+.usage-records .token-part em {
+  margin-right: 4px;
+  color: var(--sut-muted, #94a3b8);
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.usage-records .question-content {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-records.codex-records .token-cell {
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, .75fr) minmax(0, 1fr);
+}
+
+@media (max-width: 1040px) {
+  .usage-records .token-cell,
+  .usage-records.codex-records .token-cell {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 8px;
+  }
+
+  .usage-records .token-part:first-child {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,26 @@
+seeUtoken 1.0.0
+
+系统要求：Apple Silicon（M1 / M2 / M3 / M4 等 M 系列芯片），macOS 14 或更高版本。
+本安装包不适用于 Intel Mac。
+
+安装
+1. 将 seeUtoken.app 拖到 Applications 文件夹。
+2. 在「应用程序」中打开 seeUtoken。
+3. 不需要另行安装 Python、Node.js 或其他开发环境。
+
+首次使用默认配置
+Token 统计不包含缓存；白天模式；显示侧边用量栏；开启贴边自动缩进；开启始终置顶。
+以后启动会保留你自己保存的配置。
+账号信息、用量记录和个人设置不包含在安装包内，运行时从当前 Mac 读取。
+
+签名说明
+此版本仅有本地 ad-hoc 签名，未使用 Apple Developer ID 签名，也未经过 Apple 公证。
+如果 macOS 因无法验证开发者而阻止打开，请先确认文件来自你信任的发送者，
+然后在「系统设置」>「隐私与安全性」中找到本次拦截记录，选择「仍要打开」。
+无需关闭系统的 Gatekeeper 安全保护。
+Apple 官方说明：https://support.apple.com/zh-cn/102445
+
+使用
+Cursor 与 Codex 接入需要当前 Mac 上相应软件的登录与使用记录。
+Liquid Glass 取决于 macOS 支持情况；较旧系统会使用兼容外观。
+从系统菜单栏图标可打开主窗口、控制侧边栏或退出。

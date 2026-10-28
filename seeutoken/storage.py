@@ -16,13 +16,40 @@ DEFAULT_PANELS = [
 DEFAULT_SETTINGS: dict[str, Any] = {
     "manualToken": "",
     "autoRefreshMinutes": 5,
+    "codexAutoRefreshMinutes": 1,
+    "includeCachedTokens": False,
     "showFloat": True,
-    "floatCollapsed": True,
-    "useDemoWhenLoggedOut": True,
+    "floatAutoHide": True,
+    "floatAlwaysOnTop": True,
+    "floatCollapsed": False,
+    "useDemoWhenLoggedOut": False,
     "floatX": None,
     "floatY": None,
     "panels": list(DEFAULT_PANELS),
+    # light | dark | liquid | liquid-clear
+    "floatGlassStyle": "light",
 }
+
+
+def normalize_float_glass_style(value: Any) -> str:
+    mode = str(value or "").strip()
+    return mode if mode in ("light", "dark", "liquid", "liquid-clear") else DEFAULT_SETTINGS["floatGlassStyle"]
+
+
+def normalize_panels(value: Any) -> list[dict[str, Any]]:
+    """One panel per provider, preserving the first panel's metadata and order."""
+    source = value if isinstance(value, list) else DEFAULT_PANELS
+    panels = []
+    seen = set()
+    for panel in source:
+        if not isinstance(panel, dict):
+            continue
+        provider = str(panel.get("type") or panel.get("provider") or "cursor").strip().lower()
+        if not provider or provider in seen:
+            continue
+        seen.add(provider)
+        panels.append({**panel, "type": provider})
+    return panels
 
 
 def settings_path() -> Path:
@@ -31,6 +58,37 @@ def settings_path() -> Path:
     else:
         root = Path.home() / ".config"
     return root / "seeUtoken" / "settings.json"
+
+
+def usage_cache_path() -> Path:
+    return settings_path().parent / "usage_cache.json"
+
+
+def load_usage_cache() -> dict[str, Any] | None:
+    path = usage_cache_path()
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(raw, dict) and isinstance(raw.get("data"), dict):
+            return raw
+    except Exception:
+        pass
+    return None
+
+
+def save_usage_cache(payload: dict[str, Any]) -> None:
+    if not payload or not isinstance(payload.get("data"), dict):
+        return
+    if payload["data"].get("demo"):
+        return
+    try:
+        path = usage_cache_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # 热力图体积大，磁盘缓存不存，避免拖慢读写
+        data = {k: v for k, v in payload["data"].items() if k != "heatmap"}
+        slim = {**payload, "data": data}
+        path.write_text(json.dumps(slim, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 class SettingsStore:
@@ -42,8 +100,8 @@ class SettingsStore:
         try:
             raw = json.loads(self.path.read_text(encoding="utf-8"))
             merged = {**DEFAULT_SETTINGS, **raw}
-            if not isinstance(merged.get("panels"), list) or not merged["panels"]:
-                merged["panels"] = list(DEFAULT_PANELS)
+            merged["floatGlassStyle"] = normalize_float_glass_style(merged.get("floatGlassStyle"))
+            merged["panels"] = normalize_panels(merged.get("panels"))
             return merged
         except Exception:
             return {**DEFAULT_SETTINGS, "panels": list(DEFAULT_PANELS)}
@@ -51,6 +109,8 @@ class SettingsStore:
     def save(self, partial: dict[str, Any] | None = None) -> dict[str, Any]:
         if partial:
             self.data.update(partial)
+        self.data["floatGlassStyle"] = normalize_float_glass_style(self.data.get("floatGlassStyle"))
+        self.data["panels"] = normalize_panels(self.data.get("panels"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(self.data, ensure_ascii=False, indent=2), encoding="utf-8")
         return self.data

@@ -14,6 +14,11 @@ export default defineConfig({
         dashboard: resolve(__dirname, 'dashboard/index.html'),
         float: resolve(__dirname, 'float/index.html'),
       },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
     },
   },
   server: {

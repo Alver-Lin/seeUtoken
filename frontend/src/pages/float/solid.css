@@ -1,0 +1,94 @@
+/* Opaque surfaces stay confined to the rail and popup, never the WebView. */
+.root[data-glass='light'] {
+  --solid-bg: #fff;
+  --solid-border: #dfe5ed;
+  --solid-text: #182230;
+  --solid-secondary: #526174;
+  --solid-muted: #7c8a9e;
+  --solid-inset: #f3f5f8;
+  --solid-hover: #e8edf4;
+  --solid-track: #e2e8f0;
+  --solid-shadow: 0 6px 20px rgba(15, 23, 42, .10);
+  --float-tail-fill: #fff;
+  --float-tail-stroke: #dfe5ed;
+}
+
+.root[data-glass='dark'] {
+  --solid-bg: #20242c;
+  --solid-border: #383f4b;
+  --solid-text: #f1f5f9;
+  --solid-secondary: #b1bdce;
+  --solid-muted: #8c9bb0;
+  --solid-inset: #2b313c;
+  --solid-hover: #394252;
+  --solid-track: #424b59;
+  --solid-shadow: 0 6px 20px rgba(0, 0, 0, .22);
+  --float-tail-fill: #20242c;
+  --float-tail-stroke: #383f4b;
+}
+
+html .root:is([data-glass='light'], [data-glass='dark']) .glass-surface {
+  background: var(--solid-bg);
+  border: 1px solid var(--solid-border);
+  color: var(--solid-text);
+  box-shadow: var(--solid-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html .root:is([data-glass='light'], [data-glass='dark']) .glass-surface::before,
+html .root:is([data-glass='light'], [data-glass='dark']) .glass-surface::after {
+  display: none;
+}
+
+html .root:is([data-glass='light'], [data-glass='dark']) .pop-tail {
+  display: block;
+}
+
+html .root:is([data-glass='light'], [data-glass='dark']) :is(.ring, .pop-refresh) {
+  background: var(--solid-inset);
+  box-shadow: inset 0 0 0 1px var(--solid-border);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.root:is([data-glass='light'], [data-glass='dark']) .ring-track {
+  stroke: var(--solid-track);
+}
+
+html .root:is([data-glass='light'], [data-glass='dark']) :is(.pct, .pop-title, .pop-plan, .pop-refresh, .donut-pct, .pop-status),
+html .root:is([data-glass='light'], [data-glass='dark']) .pop .anim-metric {
+  color: var(--solid-text);
+  text-shadow: none;
+}
+
+html .root:is([data-glass='light'], [data-glass='dark']) :is(.donut-cap, .pop-donut-name, .pop-reset, .codex-reset-time, .pop-desc) {
+  color: var(--solid-secondary);
+}
+
+.root:is([data-glass='light'], [data-glass='dark']) :is(.pct.muted, .pop-total-label) {
+  color: var(--solid-muted);
+}
+
+.root:is([data-glass='light'], [data-glass='dark']) .pop-total-row {
+  background: var(--solid-inset);
+  border-color: var(--solid-border);
+  box-shadow: none;
+}
+
+.root:is([data-glass='light'], [data-glass='dark']) .pop-refresh:hover:not(:disabled) {
+  background: var(--solid-hover);
+  color: var(--solid-text);
+}
+
+.root:is([data-glass='light'], [data-glass='dark']) .ring.provider-busy::after {
+  border-top-color: var(--solid-text);
+  border-right-color: var(--solid-text);
+}
+
+html .root[data-glass='light'] .icon.cursor .icon-img,
+html .root[data-glass='light'] .icon.codex .icon-img,
+html .root[data-glass='light'] .icon.qoder .icon-img,
+html .root[data-glass='light'] .pop .pop-logo {
+  filter: brightness(0);
+}

@@ -21,3 +21,117 @@ body,
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
+
+/* Main-window palette. The float window keeps its existing material variables. */
+:root {
+  --sut-surface: #fff;
+  --sut-inset: #f8fafc;
+  --sut-border: #e7ebf0;
+  --sut-text: #0f172a;
+  --sut-secondary: #64748b;
+  --sut-muted: #718198;
+  --sut-track: #e6ebf2;
+  --sut-accent-soft: #e8f3ff;
+  --sut-elevated: #fff;
+}
+
+:root[data-sut-appearance] {
+  color: var(--sut-text);
+  background: var(--sut-bg);
+  accent-color: var(--sut-primary);
+}
+
+:root[data-sut-appearance]:where(:not([data-sut-appearance='light'])) {
+  --sut-bg: #111824;
+  --sut-surface: #1c2635;
+  --sut-inset: #232f40;
+  --sut-border: #354258;
+  --sut-text: #edf2fa;
+  --sut-secondary: #b2bfd2;
+  --sut-muted: #98aac2;
+  --sut-track: #364356;
+  --sut-primary: #579dff;
+  --sut-accent-soft: #243d5e;
+  --sut-elevated: #263245;
+  --sut-heat-1: #213b58;
+  --sut-heat-2: #2c6194;
+  --sut-heat-4: #94c9ff;
+}
+
+:root[data-sut-appearance='liquid'],
+:root[data-sut-appearance='liquid-clear'] {
+  --sut-surface: rgba(29, 40, 57, .78);
+  --sut-inset: rgba(45, 60, 81, .55);
+  --sut-border: rgba(204, 224, 255, .18);
+}
+
+:root[data-sut-appearance='liquid-clear'] {
+  --sut-surface: rgba(24, 35, 51, .48);
+  --sut-inset: rgba(52, 69, 92, .38);
+  --sut-border: rgba(219, 235, 255, .22);
+}
+
+/* Only expose the desktop when AppKit confirms that a native material exists. */
+:root[data-sut-appearance^='liquid']:is(.native-liquid-glass, .native-vibrancy) {
+  --sut-bg: transparent;
+}
+
+:root[data-sut-appearance] body,
+:root[data-sut-appearance] #app {
+  background: transparent;
+  color: var(--sut-text);
+}
+
+:root[data-sut-appearance^='liquid'] :is(.toolbar, .quota-card, .panel, .heatmap-board, .trend-board) {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 8px 28px rgba(0, 0, 0, .12);
+}
+
+:root[data-sut-appearance] .ant-modal-header {
+  background: transparent;
+}
+
+:root[data-sut-appearance] .ant-message-notice-content {
+  background: var(--sut-elevated);
+  color: var(--sut-text);
+}
+
+:root[data-sut-appearance] .ant-table,
+:root[data-sut-appearance] .ant-table-container,
+:root[data-sut-appearance] .ant-table-tbody > tr > td {
+  background: transparent;
+}
+
+:root[data-sut-appearance]:not([data-sut-appearance='light']) :is(.card-icon.codex .card-logo, .card-icon.cursor .card-logo, .toolbar-brand, img.brand) {
+  filter: invert(1);
+}
+
+:root[data-sut-appearance] .dashboard-toolbar .refresh-interval.ant-select .ant-select-selector {
+  color: var(--sut-text);
+  background: var(--sut-inset);
+  border-color: var(--sut-border);
+}
+
+:root[data-sut-appearance] :is(.quota-home, .quota-page) {
+  color: var(--sut-text);
+}
+
+/* Honor macOS accessibility settings even when a glass mode is selected. */
+:root[data-sut-appearance].native-reduced-transparency,
+:root[data-sut-appearance].native-material-opaque {
+  --sut-bg: #111824;
+  --sut-surface: #1c2635;
+  --sut-inset: #232f40;
+  --sut-border: #53627a;
+}
+
+:root[data-sut-appearance='light'].native-reduced-transparency,
+:root[data-sut-appearance='light'].native-material-opaque {
+  --sut-bg: #f5f7f9;
+  --sut-surface: #fff;
+  --sut-inset: #f8fafc;
+  --sut-border: #c5cfdb;
+}
+
+:root[data-sut-appearance] ::-webkit-scrollbar { width: 8px; height: 8px; }
+:root[data-sut-appearance] ::-webkit-scrollbar-thumb { background: var(--sut-border); border-radius: 8px; }
+:root[data-sut-appearance] ::-webkit-scrollbar-track { background: transparent; }

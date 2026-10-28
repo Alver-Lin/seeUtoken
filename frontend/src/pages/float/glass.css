@@ -1,0 +1,240 @@
+/* 悬浮窗玻璃分层（色板/高光对齐 token-monitor styles.css）：
+   - frosted：token-monitor .shell 配方（48,52,56 @0.68 + blur32 saturate115）
+   - liquid：侧栏 = Liquid 通透胶囊（CSS/SVG 回退）；弹窗 = 致密磨砂板（渐变 + 86% 底色）
+   - 原生 NSGlassEffectView 接管时（html.native-liquid-glass）：CSS 材质整体退场 */
+
+.root {
+  /* token-monitor --glass-rgb / --line-rgb / --sunken-rgb */
+  --float-glass-rgb: 48, 52, 56;
+  --float-line-rgb: 232, 238, 244;
+  --float-overlay-rgb: 255, 255, 255;
+  --float-sunken-rgb: 4, 8, 13;
+  /* token-monitor --liquid-glass-specular：上缘反光 + 下缘微光（是反射光，不是叠加色） */
+  --liquid-glass-specular:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+}
+
+/* —— frosted：token-monitor widget shell —— */
+.root[data-glass='frosted'] {
+  --float-glass-tint: rgba(var(--float-glass-rgb), 0.68);
+  --float-glass-border: rgba(var(--float-line-rgb), 0.138);
+  --float-glass-blur: 32px;
+  --float-glass-saturate: 115%;
+  --float-glass-shadow: 0 22px 55px rgba(0, 0, 0, 0.36);
+  --float-glass-highlight: var(--liquid-glass-specular);
+  --float-tail-stroke: rgba(var(--float-line-rgb), 0.138);
+  --float-tail-fill: rgba(var(--float-glass-rgb), 0.68);
+}
+
+.root[data-glass='frosted'] .glass-surface {
+  background: var(--float-glass-tint);
+  border: 0.5px solid var(--float-glass-border);
+  box-shadow: var(--float-glass-shadow), var(--float-glass-highlight);
+  -webkit-backdrop-filter: blur(var(--float-glass-blur)) saturate(var(--float-glass-saturate));
+  backdrop-filter: blur(var(--float-glass-blur)) saturate(var(--float-glass-saturate));
+}
+
+/* —— liquid 公共变量 —— */
+.root[data-glass='liquid'],
+.root[data-glass='liquid-clear'] {
+  --lg-shadow-blur: 22px;
+  --lg-shadow-spread: -6px;
+  --lg-shadow-color: rgba(255, 255, 255, 0.38);
+  --lg-outer-shadow-blur: 28px;
+  --float-tail-stroke: rgba(var(--float-line-rgb), 0.16);
+  /* token-monitor 弹层配方：180° 渐变叠在 86% 玻璃底色上的致密磨砂板 */
+  --pop-gradient: linear-gradient(
+    180deg,
+    rgba(var(--float-overlay-rgb), 0.07),
+    rgba(var(--float-overlay-rgb), 0.02)
+  );
+  --pop-tint: rgba(var(--float-glass-rgb), 0.86);
+  --pop-border: rgba(var(--float-line-rgb), 0.16);
+  --pop-blur: blur(26px) saturate(150%);
+  --pop-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+  --rail-blur: blur(20px) saturate(200%) brightness(1.1);
+}
+
+.root[data-glass='liquid'] {
+  --float-tail-fill: rgba(var(--float-glass-rgb), 0.82);
+  --rail-tint: rgba(255, 255, 255, 0.07);
+  --rail-accent: rgba(160, 210, 255, 0.1);
+  --lg-backdrop-fallback-rail: blur(24px) saturate(1.9) brightness(1.05);
+  --lg-tint-opacity-rail: 0.07;
+}
+
+.root[data-glass='liquid-clear'] {
+  --float-tail-fill: rgba(var(--float-glass-rgb), 0.76);
+  --rail-tint: rgba(255, 255, 255, 0.04);
+  --rail-accent: rgba(100, 190, 255, 0.16);
+  --lg-backdrop-fallback-rail: blur(18px) saturate(2.05) brightness(1.12);
+  --lg-tint-opacity-rail: 0.05;
+}
+
+/* —— 弹窗：token-monitor「致密磨砂板」（渐变 + 86% 底色 + 反光边） —— */
+.root[data-glass='liquid'] .glass-surface--pop,
+.root[data-glass='liquid-clear'] .glass-surface--pop {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--pop-gradient), var(--pop-tint);
+  border: 0.5px solid var(--pop-border);
+  box-shadow: var(--pop-shadow), var(--liquid-glass-specular);
+  -webkit-backdrop-filter: var(--pop-blur);
+  backdrop-filter: var(--pop-blur);
+}
+
+.root[data-glass='liquid'] .glass-surface--pop::before,
+.root[data-glass='liquid-clear'] .glass-surface--pop::before,
+.root[data-glass='liquid'] .glass-surface--pop::after,
+.root[data-glass='liquid-clear'] .glass-surface--pop::after {
+  display: none;
+}
+
+/* —— 侧栏：Liquid 胶囊（高饱和 + 冷色折射感） —— */
+.root[data-glass='liquid'] .glass-surface--rail,
+.root[data-glass='liquid-clear'] .glass-surface--rail {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  box-shadow:
+    0 10px var(--lg-outer-shadow-blur) rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px rgba(255, 255, 255, 0.14),
+    0 0 28px rgba(80, 160, 255, 0.12);
+}
+
+.root[data-glass='liquid'] .glass-surface--rail::before,
+.root[data-glass='liquid-clear'] .glass-surface--rail::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 var(--lg-shadow-blur) var(--lg-shadow-spread) var(--lg-shadow-color),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+    var(--liquid-glass-specular);
+  background-color: var(--rail-tint);
+  background-image: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.22) 0%,
+    var(--rail-accent) 38%,
+    rgba(60, 140, 255, 0.08) 72%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+}
+
+.root[data-glass='liquid'] .glass-surface--rail::after,
+.root[data-glass='liquid-clear'] .glass-surface--rail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  isolation: isolate;
+  -webkit-backdrop-filter: var(--lg-backdrop, var(--lg-backdrop-fallback-rail));
+  backdrop-filter: var(--lg-backdrop, var(--lg-backdrop-fallback-rail));
+}
+
+.root[data-glass='liquid'] .glass-surface--rail.glass-liquid-active::before,
+.root[data-glass='liquid-clear'] .glass-surface--rail.glass-liquid-active::before {
+  background-size: 240% 240%;
+  animation: liquid-specular 7s ease-in-out infinite;
+}
+
+@keyframes liquid-specular {
+  0%,
+  100% {
+    background-position: 0% 20%;
+  }
+  50% {
+    background-position: 100% 80%;
+  }
+}
+
+/* —— 原生 NSGlassEffectView 接管整窗轮廓：CSS 只留内容，不叠第二层材质 —— */
+html.native-liquid-glass .root .glass-surface {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.native-liquid-glass .root .glass-surface::before,
+html.native-liquid-glass .root .glass-surface::after {
+  display: none;
+}
+
+/* 尾巴由原生路径一并成型，CSS 三角形退场 */
+html.native-liquid-glass .root .pop-tail {
+  display: none;
+}
+
+/* 控件直接落在原生玻璃上：胶囊 + 反光边，不再各自模糊（token-monitor 同款） */
+html.native-liquid-glass .root .ring,
+html.native-liquid-glass .root .pop-refresh {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow:
+    inset 0 0 0 0.5px rgba(var(--float-line-rgb), 0.14),
+    var(--liquid-glass-specular);
+}
+
+html.native-liquid-glass .root .icon.cursor,
+html.native-liquid-glass .root .icon.codex,
+html.native-liquid-glass .root .icon.qoder {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+html.native-liquid-glass .root .ring {
+  background: rgba(var(--float-overlay-rgb), 0.11);
+}
+
+/* —— 原生 Vibrancy（frosted 回退）/ 降低透明度 / 高对比度 —— */
+html.native-vibrancy .root[data-glass='frosted'] .glass-surface {
+  background: rgba(var(--float-glass-rgb), 0.52);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.native-material-opaque .root .glass-surface,
+html.native-reduced-transparency .root .glass-surface {
+  background: rgb(var(--float-glass-rgb));
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+html.native-reduced-transparency .root * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.native-high-contrast .root {
+  --float-glass-border: rgba(var(--float-line-rgb), 0.28);
+  --pop-border: rgba(var(--float-line-rgb), 0.32);
+}
+
+.root .glass-surface > * {
+  position: relative;
+  z-index: 2;
+}
+
+.root .pop-tail::before {
+  border-left-color: var(--float-tail-stroke);
+}
+
+.root .pop-tail::after {
+  border-left-color: var(--float-tail-fill);
+}
+
+.root .pop-muted .pop-tail::after {
+  border-left-color: var(--float-tail-fill);
+}

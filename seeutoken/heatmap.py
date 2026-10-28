@@ -17,26 +17,32 @@ def day_key(ts: int | float | str) -> str | None:
     return dt.strftime("%Y-%m-%d")
 
 
+def _event_tokens(event: dict[str, Any]) -> int:
+    return int(event.get("input") or 0) + int(event.get("output") or 0)
+
+
 def aggregate_days_from_events(events: list[dict[str, Any]]) -> dict[str, dict[str, float | int]]:
     days: dict[str, dict[str, float | int]] = {}
     for e in events or []:
         key = day_key(e.get("time", 0))
         if not key:
             continue
-        bucket = days.setdefault(key, {"cost": 0.0, "calls": 0})
-        bucket["cost"] = float(bucket["cost"]) + float(e.get("cost") or 0)
+        bucket = days.setdefault(key, {"tokens": 0, "calls": 0, "input": 0, "output": 0, "cache": 0})
+        bucket["tokens"] = int(bucket["tokens"]) + _event_tokens(e)
+        for field in ("input", "output", "cache"):
+            bucket[field] += int(e.get(field) or 0)
         bucket["calls"] = int(bucket["calls"]) + 1
-    for k, v in days.items():
-        v["cost"] = round(float(v["cost"]), 2)
     return days
 
 
-def level_for_cost(cost: float, max_cost: float) -> int:
-    if not cost or cost <= 0:
+def level_for_tokens(tokens: float | int, max_tokens: float | int) -> int:
+    tokens = float(tokens or 0)
+    max_tokens = float(max_tokens or 0)
+    if not tokens or tokens <= 0:
         return 0
-    if not max_cost or max_cost <= 0:
+    if not max_tokens or max_tokens <= 0:
         return 1
-    r = cost / max_cost
+    r = tokens / max_tokens
     if r <= 0.25:
         return 1
     if r <= 0.5:
@@ -48,14 +54,14 @@ def level_for_cost(cost: float, max_cost: float) -> int:
 
 def summarize_year(days: dict[str, dict[str, Any]], year: int) -> dict[str, Any]:
     prefix = f"{year}-"
-    cost = 0.0
+    tokens = 0
     calls = 0
     for k, v in (days or {}).items():
         if not k.startswith(prefix):
             continue
-        cost += float(v.get("cost") or 0)
+        tokens += int(v.get("tokens") or 0)
         calls += int(v.get("calls") or 0)
-    return {"year": year, "cost": round(cost, 2), "calls": calls, "days": days}
+    return {"year": year, "tokens": tokens, "calls": calls, "days": days}
 
 
 def build_year_grid(year: int, days_map: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
@@ -67,11 +73,11 @@ def build_year_grid(year: int, days_map: dict[str, dict[str, Any]] | None = None
         year = datetime.now().year
 
     days = days_map or {}
-    max_cost = 0.0
+    max_tokens = 0
     prefix = f"{year}-"
     for k, v in days.items():
         if k.startswith(prefix):
-            max_cost = max(max_cost, float(v.get("cost") or 0))
+            max_tokens = max(max_tokens, int(v.get("tokens") or 0))
 
     months = []
     for month in range(1, 13):
@@ -82,15 +88,15 @@ def build_year_grid(year: int, days_map: dict[str, dict[str, Any]] | None = None
         for d in range(1, days_in_month + 1):
             key = f"{year}-{month:02d}-{d:02d}"
             hit = days.get(key)
-            cost = float(hit["cost"]) if hit else 0.0
+            tokens = int(hit["tokens"]) if hit else 0
             calls = int(hit["calls"]) if hit else 0
             cells.append(
                 {
                     "date": key,
                     "day": d,
-                    "cost": cost,
+                    "tokens": tokens,
                     "calls": calls,
-                    "level": level_for_cost(cost, max_cost),
+                    "level": level_for_tokens(tokens, max_tokens),
                 }
             )
         while len(cells) % 7:
@@ -101,9 +107,9 @@ def build_year_grid(year: int, days_map: dict[str, dict[str, Any]] | None = None
     summary = summarize_year(days, year)
     return {
         "year": year,
-        "maxCost": max_cost,
+        "maxTokens": max_tokens,
         "months": months,
-        "cost": summary["cost"],
+        "tokens": summary["tokens"],
         "calls": summary["calls"],
         "days": days,
     }
@@ -124,18 +130,18 @@ def get_demo_heatmap(year: int | None = None) -> dict[str, Any]:
         seed = (seed * 16807) % 2147483647
         return (seed - 1) / 2147483646
 
-    def add(m: int, d: int, cost: float, calls: int) -> None:
-        days[f"{year}-{m:02d}-{d:02d}"] = {"cost": cost, "calls": calls}
+    def add(m: int, d: int, tokens: int, calls: int) -> None:
+        days[f"{year}-{m:02d}-{d:02d}"] = {"tokens": tokens, "calls": calls}
 
     for d in range(1, 31):
         if d % 4 == 0:
             continue
-        add(9, d, round(rnd() * 18 + (8 if d > 20 else 1), 2), int(rnd() * 12) + 1)
+        add(9, d, int(rnd() * 180_000 + (80_000 if d > 20 else 10_000)), int(rnd() * 12) + 1)
     for d in range(1, 27):
         if d % 5 == 0:
             continue
-        add(10, d, round(rnd() * 22 + (10 if d < 15 else 2), 2), int(rnd() * 15) + 1)
-    add(8, 28, 1.2, 2)
-    add(8, 29, 0.8, 1)
-    add(11, 2, 3.5, 4)
+        add(10, d, int(rnd() * 220_000 + (100_000 if d < 15 else 20_000)), int(rnd() * 15) + 1)
+    add(8, 28, 12_000, 2)
+    add(8, 29, 8_000, 1)
+    add(11, 2, 35_000, 4)
     return build_year_grid(year, days)

@@ -8,10 +8,21 @@ export function formatMoney(dollars, digits = 2) {
 
 export function formatTokens(n) {
   const v = Number(n) || 0;
-  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(v >= 10_000_000 ? 0 : 1)}M`;
-  if (v >= 10_000) return `${(v / 10_000).toFixed(v >= 100_000 ? 0 : 1)}万`;
-  if (v >= 1_000) return `${(v / 1_000).toFixed(1)}k`;
+  if (v >= 100_000_000) {
+    const x = v / 100_000_000;
+    return `${x >= 10 ? x.toFixed(0) : x.toFixed(1)}亿`;
+  }
+  if (v >= 10_000) {
+    const x = v / 10_000;
+    return `${x >= 100 ? x.toFixed(0) : x.toFixed(1)}万`;
+  }
   return String(Math.round(v));
+}
+
+/** 悬停提示等场景：带千分位的完整 Token 数 */
+export function formatTokensExact(n) {
+  const v = Math.round(Number(n) || 0);
+  return v.toLocaleString('zh-CN');
 }
 
 export function formatPercent(p, digits = 0) {

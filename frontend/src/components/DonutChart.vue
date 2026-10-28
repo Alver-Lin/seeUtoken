@@ -8,16 +8,19 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, inject, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
   segments: { type: Array, default: () => [] },
   size: { type: Number, default: 180 },
   cutout: { type: Number, default: 0.72 },
   track: { type: String, default: '#e5e7eb' },
+  roundedCaps: { type: Boolean, default: false },
 });
 
 const canvasRef = ref(null);
+const themedTrack = inject('sutChartTrack', null);
+const trackColor = computed(() => themedTrack?.value || props.track);
 
 function draw() {
   const canvas = canvasRef.value;
@@ -42,24 +45,31 @@ function draw() {
 
   ctx.beginPath();
   ctx.arc(cx, cy, (radius + inner) / 2, 0, Math.PI * 2);
-  ctx.strokeStyle = props.track;
+  ctx.strokeStyle = trackColor.value;
   ctx.lineWidth = radius - inner;
   ctx.stroke();
 
   for (const seg of props.segments) {
     const sweep = (Math.max(0, seg.value) / total) * Math.PI * 2;
     if (sweep <= 0) continue;
+    const midRadius = (radius + inner) / 2;
+    const rounded = props.roundedCaps && sweep < Math.PI * 2 - 1e-6;
+    // Inset round caps so a nearly full ring still leaves the correct gap.
+    // Very short arcs become smaller dots instead of overstating the value.
+    const width = rounded ? Math.min(radius - inner, 2 * midRadius * Math.sin(Math.min(sweep, Math.PI) / 2)) : radius - inner;
+    const inset = rounded ? Math.min(Math.asin(width / (2 * midRadius)), sweep / 2 - 1e-7) : 0;
     ctx.beginPath();
-    ctx.arc(cx, cy, (radius + inner) / 2, angle, angle + sweep);
+    ctx.arc(cx, cy, midRadius, angle + inset, angle + sweep - inset);
     ctx.strokeStyle = seg.color;
-    ctx.lineWidth = radius - inner;
+    ctx.lineWidth = width;
+    ctx.lineCap = rounded ? 'round' : 'butt';
     ctx.stroke();
     angle += sweep;
   }
 }
 
 onMounted(draw);
-watch(() => props.segments, draw, { deep: true });
+watch(() => [props.segments, props.size, props.cutout, trackColor.value, props.roundedCaps], draw, { deep: true });
 </script>
 
 <style scoped>

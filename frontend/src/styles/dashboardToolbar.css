@@ -1,0 +1,69 @@
+.dashboard-toolbar .refresh-controls {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.dashboard-toolbar .refresh-interval.ant-select {
+  width: 128px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.dashboard-toolbar .refresh-interval.ant-select .ant-select-selector {
+  height: 36px;
+  padding: 0 12px;
+  border-color: var(--sut-border, #dce3eb);
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--sut-inset, #f8fafc);
+  box-shadow: none;
+}
+
+.dashboard-toolbar .refresh-interval .ant-select-selection-item,
+.dashboard-toolbar .refresh-interval .ant-select-selection-placeholder {
+  display: flex;
+  align-items: center;
+  line-height: 34px;
+  color: var(--sut-secondary, #334155);
+}
+
+.dashboard-toolbar .refresh-interval.ant-select-focused .ant-select-selector,
+.dashboard-toolbar .refresh-interval:hover .ant-select-selector {
+  border-color: #91baff;
+}
+
+.dashboard-toolbar .refresh-now.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 36px;
+  min-width: 110px;
+  padding: 0 14px;
+  border-radius: 8px;
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.dashboard-toolbar .refresh-now .anticon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 15px;
+}
+
+.dashboard-toolbar .refresh-now > span + span {
+  margin-inline-start: 0;
+}
+
+.dashboard-toolbar .toolbar-updated,
+.dashboard-toolbar .updated {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

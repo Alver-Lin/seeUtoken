@@ -54,7 +54,7 @@ svg {
   height: 100%;
 }
 .track {
-  stroke: #edf2f7;
+  stroke: var(--sut-track, #edf2f7);
 }
 .value {
   stroke: #1877f2;
@@ -67,7 +67,7 @@ svg {
   place-items: center;
   font-size: 15px;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--sut-text, #1a202c);
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC',
     'Microsoft YaHei', sans-serif;
   letter-spacing: -0.02em;

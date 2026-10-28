@@ -106,11 +106,11 @@ def get_demo_data() -> dict[str, Any]:
                 "cache": 582_180_000,
             },
             "all": {
-                "cost": 358.98,
-                "calls": 706,
-                "input": 22_312_000,
-                "output": 3_198_000,
-                "cache": 582_180_000,
+                "cost": 980.12,
+                "calls": 2100,
+                "input": 88_000_000,
+                "output": 11_200_000,
+                "cache": 1_680_000_000,
             },
         },
         "models": {
@@ -137,7 +137,7 @@ def get_demo_data() -> dict[str, Any]:
             "week": scale(cycle_models, 0.14, 0.16),
             "month": scale(cycle_models, 1.09, 1.11),
             "cycle": cycle_models,
-            "all": cycle_models,
+            "all": scale(cycle_models, 2.7, 2.8),
         },
         "events": [
             {

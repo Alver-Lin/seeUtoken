@@ -6,8 +6,9 @@
         <p class="heat-summary">
           <template v-if="summaryHasData">
             {{ year }} 年共使用
-            <b>{{ formatMoney(modelValue?.cost || 0) }}</b>
-            · {{ Number(modelValue?.calls || 0).toLocaleString('zh-CN') }} 次
+            <b :title="yearTokensExactTitle">{{ formatTokens(modelValue?.tokens || 0) }} Token</b>
+            ·
+            <b>{{ Number(modelValue?.calls || 0).toLocaleString('zh-CN') }} 次</b>
           </template>
           <template v-else-if="loading">{{ year }} 年加载中…</template>
           <template v-else>这一年还没有使用记录</template>
@@ -70,10 +71,12 @@
 import { computed, ref, watch } from 'vue';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
 import { seeUtoken } from '../bridge';
-import { formatMoney } from '../utils/format';
+import { formatTokens, formatTokensExact } from '../utils/format';
+import { tokenBasisLabel } from '../utils/tokenAccounting';
 
 const props = defineProps({
   modelValue: { type: Object, default: null },
+  provider: { type: String, default: 'cursor' },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -84,7 +87,16 @@ const loading = ref(false);
 const heatTip = ref(null);
 
 const months = computed(() => props.modelValue?.months || []);
-const summaryHasData = computed(() => Number(props.modelValue?.calls || 0) > 0);
+const summaryHasData = computed(
+  () =>
+    Number(props.modelValue?.calls || 0) > 0 || Number(props.modelValue?.tokens || 0) > 0
+);
+
+const yearTokensExactTitle = computed(() => {
+  const n = Number(props.modelValue?.tokens || 0);
+  if (!n) return '';
+  return `${props.modelValue?.year || year.value} 年 Token 合计：${formatTokensExact(n)}（${tokenBasisLabel(props.modelValue?.includeCachedTokens)}）`;
+});
 
 watch(
   () => props.modelValue?.year,
@@ -105,7 +117,7 @@ function showTip(event, cell) {
     return;
   }
   const text = cell.level
-    ? `${cell.date} · ${formatMoney(cell.cost)} · ${cell.calls} 次`
+    ? `${cell.date} · ${formatTokensExact(cell.tokens || 0)} Token · ${Number(cell.calls || 0).toLocaleString('zh-CN')} 次`
     : `${cell.date} · 无使用`;
   heatTip.value = { x: event.clientX, y: event.clientY, text };
 }
@@ -118,7 +130,8 @@ async function changeYear(delta) {
   year.value = next;
   heatTip.value = null;
   try {
-    const res = await seeUtoken.getHeatmap(next);
+    const payload = props.provider === 'codex' ? await seeUtoken.getCodexUsage(false, next) : null;
+    const res = payload ? { heatmap: payload.data?.heatmap } : await seeUtoken.getHeatmap(next);
     if (res?.heatmap) emit('update:modelValue', res.heatmap);
   } finally {
     loading.value = false;
@@ -128,8 +141,8 @@ async function changeYear(delta) {
 
 <style scoped>
 .panel {
-  background: #fff;
-  border: 1px solid #e7ebf0;
+  background: var(--sut-surface, #fff);
+  border: 1px solid var(--sut-border, #e7ebf0);
   border-radius: 14px;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
@@ -151,17 +164,17 @@ async function changeYear(delta) {
   margin: 0;
   font-size: 15px;
   font-weight: 650;
-  color: #1f2937;
+  color: var(--sut-text, #1f2937);
 }
 
 .heat-summary {
   margin: 6px 0 0;
-  color: #4b5563;
+  color: var(--sut-secondary, #4b5563);
   font-size: 13px;
 }
 
 .heat-summary b {
-  color: #0f172a;
+  color: var(--sut-text, #0f172a);
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -174,9 +187,9 @@ async function changeYear(delta) {
   flex-shrink: 0;
   height: 32px;
   padding: 2px;
-  border: 1px solid #e8ecf1;
+  border: 1px solid var(--sut-border, #e8ecf1);
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--sut-inset, #f8fafc);
 }
 
 .year-nav-btn {
@@ -190,25 +203,25 @@ async function changeYear(delta) {
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #475569;
+  color: var(--sut-secondary, #475569);
   cursor: pointer;
   line-height: 1;
 }
 
 .year-nav-btn:hover:not(:disabled) {
-  background: #fff;
-  color: #1677ff;
+  background: var(--sut-surface, #fff);
+  color: var(--sut-primary, #1677ff);
 }
 
 .year-nav-btn:disabled {
-  color: #cbd5e1;
+  color: var(--sut-muted, #cbd5e1);
   cursor: not-allowed;
 }
 
 .year-nav-label {
   min-width: 64px;
   padding: 0 4px;
-  color: #0f172a;
+  color: var(--sut-text, #0f172a);
   font-size: 13px;
   font-weight: 650;
   line-height: 28px;
@@ -251,7 +264,7 @@ async function changeYear(delta) {
   width: 12px;
   height: 12px;
   border-radius: 3px;
-  background: #ebedf0;
+  background: var(--sut-track, #ebedf0);
 }
 
 .contrib-cell.pad {
@@ -259,23 +272,23 @@ async function changeYear(delta) {
 }
 
 .contrib-cell.lv0 {
-  background: #ebedf0;
+  background: var(--sut-track, #ebedf0);
 }
 
 .contrib-cell.lv1 {
-  background: #d6e4ff;
+  background: var(--sut-heat-1, #d6e4ff);
 }
 
 .contrib-cell.lv2 {
-  background: #8eb7ff;
+  background: var(--sut-heat-2, #8eb7ff);
 }
 
 .contrib-cell.lv3 {
-  background: #1677ff;
+  background: var(--sut-primary, #1677ff);
 }
 
 .contrib-cell.lv4 {
-  background: #0b4db3;
+  background: var(--sut-heat-4, #0b4db3);
 }
 
 .contrib-cell:not(.pad) {
@@ -283,7 +296,7 @@ async function changeYear(delta) {
 }
 
 .contrib-label {
-  color: #8b95a5;
+  color: var(--sut-muted, #8b95a5);
   font-size: 12px;
   line-height: 1;
 }
