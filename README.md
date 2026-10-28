@@ -1,90 +1,253 @@
-# seeUtoken · Cursor 用量悬浮球（Python）
+<div align="center">
 
-桌面常驻应用（Python + pywebview）：
+<img src="assets/icon.png" alt="seeUtoken 图标" width="112" />
 
-- **模型额度首页**：新建 / 删除额度面板；每个软件只允许一个面板，已添加的软件不可重复添加，删除后可重新添加；Cursor 显示实时剩余额度
-- **用量详情**：统计卡、存量环图、模型分布、使用记录、年度热力图
-- **Codex 接入**：自动识别本机 Codex 登录，通过官方 app-server 读取账户额度；首页卡片和悬浮栏展示各额度窗口，点击卡片或双击悬浮栏 Codex 图标进入详情大屏
-- **置顶悬浮球**：屏幕常驻，点击展开侧边用量；系统托盘控制显隐与退出
-- **macOS 贴边收起**：将侧边用量栏拖到屏幕左、右边缘，移出后收成窄条；悬停窄条展开，拖离边缘后保持展开。设置中可关闭「贴边自动缩进」
-- **悬浮栏置顶设置**：设置中可切换「始终置顶」，与贴边自动缩进独立保存，重启后保留；两项默认开启，修改后立即应用
-- **全局外观**：「外观模式」统一提供白天模式、黑夜模式、Liquid Glass（标准）、Liquid Glass（通透）四个选项，统一作用于模型额度首页、Cursor / Codex 详情大屏、侧边栏与弹窗，切换后自动保存。macOS 主窗口同时适配原生 Liquid Glass（旧版系统回退到 Vibrancy），标题栏随外观切换；系统开启「降低透明度」时使用不透明背景
+# seeUtoken
 
-首次使用默认：Token 统计不包含缓存、白天模式、显示侧边用量栏、开启贴边自动缩进、开启始终置顶；之后按用户保存的设置启动。
+**让 Cursor 与 Codex 的额度和 Token 用量，一眼可见。**
 
-主窗口点红叉会完整退出应用，同时关闭侧边栏和托盘。最小化或隐藏主窗口后，点击 Dock 图标（或再次打开应用）恢复主窗口并置前；双击侧边栏 Cursor / Codex 图标打开对应详情大屏，未接入的软件图标打开模型额度首页。拖动侧边栏不会触发双击打开。
+模型额度首页 · 用量详情大屏 · 桌面侧边栏 · 年度热力图 · Liquid Glass
 
-## 环境
+![macOS](https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white)
+![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-6366f1)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
 
-- Python 3.10+
-- Windows 推荐（使用 Edge WebView2）
+[功能特性](#功能特性) · [快速开始](#快速开始) · [数据来源与统计口径](#数据来源与统计口径) · [常见问题](#常见问题) · [反馈问题](https://github.com/Alver-Lin/seeUtoken/issues)
 
-## 安装与启动
+</div>
+
+## seeUtoken 是什么？
+
+seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的账户额度、Token 消耗、模型分布和使用记录集中展示在一个应用里。
+
+写代码时，用常驻侧边栏查看剩余额度；需要复盘时，打开详情大屏，查看每次提问的用量、年度活跃热力图和历史趋势。应用读取本机已有的登录状态与会话记录，结合提供方的账户接口获取数据，无需部署额外的服务端。
+
+当前重点适配 **macOS**，提供面向 **Apple Silicon、macOS 14 及以上**的 DMG 打包脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
+
+## 支持的工具
+
+- **Cursor**：识别本机登录状态，读取账户额度、账期用量和使用记录；结合本机历史匹配用户提问与项目名称。
+- **Codex**：通过本机 Codex 的 `app-server` 读取账户及额度窗口；从本机会话和归档记录中统计 Token、模型、项目与提问用量。
+
+首页同时保留 **Qoder** 面板入口，目前尚未接入真实用量数据。每种工具只能添加一个额度面板，删除后可以重新添加。
+
+## 功能特性
+
+### 账户额度，一处查看
+
+- **模型额度首页**：并列查看已添加工具的当日 Token、周期用量和剩余额度。
+- **Cursor 账户额度**：展示订阅账期及接口返回的额度信息，点击卡片进入详情。
+- **Codex 额度窗口**：展示各额度窗口的剩余比例、重置时间与倒计时。
+- **独立刷新设置**：Cursor 与 Codex 分别保存刷新间隔，可选手动、1、5、15 或 30 分钟，也可随时点击「立即刷新」。
+- **同步状态提示**：显示最近更新时间；Codex 同步失败时保留最近额度快照，已过期的窗口标记为待更新。
+
+### 用量明细，看清每次消耗
+
+- **Token 拆分**：查看输入、输出和缓存读写，支持切换是否将缓存计入主统计数字。
+- **模型分布**：按时间范围查看不同模型的 Token 用量、调用次数和占比。
+- **使用记录**：展示调用时间、模型、项目和对应的用户提问；长提问可悬停查看全文。
+- **Codex 按提问汇总**：同一次提问中的多次模型调用合并为一条记录，回答进行中持续累计用量。
+- **年度热力图与趋势**：按日期查看历史活跃情况和 Token 消耗变化。
+
+### 桌面侧边栏，随手可见
+
+- **常驻用量栏**：在桌面查看工具图标、用量和额度，点击展开对应信息。
+- **macOS 贴边收起**：拖到屏幕左侧或右侧，移出后收为窄条；悬停展开，拖离边缘后保持展开。
+- **可选始终置顶**：独立控制窗口置顶与贴边自动缩进，修改后立即生效并保存。
+- **双击直达详情**：双击 Cursor 或 Codex 图标打开对应大屏，拖动侧边栏时不会误触发。
+- **菜单栏与托盘控制**：打开主窗口、显示或隐藏侧边栏，以及退出应用。
+
+### 四种外观，统一切换
+
+在首页设置中选择外观，模型额度首页、详情大屏、侧边栏与弹窗会同步更新：
+
+- **白天模式**：浅色背景，适合明亮环境。
+- **黑夜模式**：深色界面，适合夜间使用。
+- **Liquid Glass（标准）**：带有玻璃质感的半透明外观。
+- **Liquid Glass（通透）**：更通透的玻璃外观。
+
+macOS 主窗口会按系统能力使用原生 Liquid Glass 或 Vibrancy 兼容效果，标题栏随外观切换。系统开启「降低透明度」时，应用改用不透明背景。
+
+## 快速开始
+
+### 安装 macOS DMG
+
+可使用项目构建的 `seeUtoken-V1.0.0.dmg` 安装，构建方式见下方的[打包 macOS 应用](#打包-macos-应用)。
+
+1. 确认设备使用 Apple Silicon 芯片，并运行 macOS 14 或更高版本。
+2. 打开 DMG，将 `seeUtoken.app` 拖入 `Applications` 文件夹。
+3. 在「应用程序」中打开 seeUtoken，无需额外安装 Python 或 Node.js。
+4. 确保本机 Cursor 或 Codex 已登录，然后进入对应面板查看数据。
+
+当前 DMG 使用本地 ad-hoc 签名，尚未进行 Developer ID 签名及 Apple 公证。首次打开若被系统拦截，请按[安装说明](packaging/macos/INSTALL.txt)操作。
+
+### 从源码运行
+
+准备 **Python 3.10+**；需要构建或修改前端时，还需安装 **Node.js 22+ 与 npm**。
 
 ```bash
+git clone https://github.com/Alver-Lin/seeUtoken.git
 cd seeUtoken
+
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -r requirements.txt
 
-# 前端（Vue3 + Ant Design Vue）
 cd frontend
-npm install
+npm ci
 npm run build
 cd ..
 
 python run.py
 ```
 
-开发时也可在 `frontend` 目录执行 `npm run dev` 单独预览页面。
+仓库已包含 `ui/` 构建产物；只运行现有界面时，可跳过前端安装与构建步骤。也可以使用 `python -m seeutoken` 启动。
 
-或：
+上述命令适用于 macOS。Windows 使用 `.venv\Scripts\activate` 激活虚拟环境，并需要 WebView2；Linux 的 WebView 运行环境需按 pywebview 要求另行准备。macOS 原生玻璃、贴边收起等功能依赖 AppKit，其他平台不提供相同的原生效果。
+
+### 首次使用
+
+1. **接入 Cursor**：先在本机 Cursor 中登录。若尚未识别到账户，可在 Cursor 详情页点击「登录 Cursor」，完成登录后刷新。
+2. **接入 Codex**：在本机安装并登录 Codex。应用需要能找到 `codex` 可执行文件；macOS 也会尝试识别 `/Applications` 下应用内置的 Codex CLI。
+3. **整理面板**：在模型额度首页添加或删除工具面板，点击卡片进入对应详情。
+4. **调整偏好**：在首页设置中切换外观、缓存统计、侧边栏显示、贴边自动缩进和始终置顶。
+
+首次启动默认使用白天模式，Token 统计不含缓存，显示侧边用量栏，并开启贴边自动缩进与始终置顶。后续启动会恢复已保存的偏好。
+
+## 数据来源与统计口径
+
+### Cursor
+
+账户额度与用量通过 Cursor Dashboard 相关接口读取；本机登录状态来自 Cursor 的 `state.vscdb`：
+
+- **macOS**：`~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`
+- **Windows**：`%APPDATA%\Cursor\User\globalStorage\state.vscdb`
+- **Linux**：`~/.config/Cursor/User/globalStorage/state.vscdb`
+
+使用记录中的提问按会话标识和调用时间匹配本机用户消息；项目名称结合 `~/.cursor/projects/` 下的目录信息解析。本机历史缺失时，相关字段显示「—」。
+
+Cursor 默认每 **5 分钟**自动刷新一次。接口数据可能有延迟，且历史覆盖范围取决于提供方返回的数据。
+
+### Codex
+
+Codex 使用两种数据来源：
+
+- **账户与额度**：通过本机 `codex app-server` 查询账户信息和额度窗口，默认每 **1 分钟**同步一次。
+- **本机用量**：读取 `CODEX_HOME` 下的 `sessions/` 与 `archived_sessions/`，未设置时使用 `~/.codex/`；界面通常每 **15 秒**更新本机统计。
+
+统计按累计计数的增量计算，避免重复额度快照与会话归档副本重复计数，并排除内部自动审核模型。使用记录按每次提问合并；缺少提问标识及开始标记的旧记录保留各次调用。模型分布和调用次数仍按原始模型调用计算。
+
+**本机 Token 统计只覆盖这台设备保留的记录，不代表账户在所有设备上的云端账单。** 删除来源会话文件可能影响历史统计。
+
+### Token 是否包含缓存？
+
+设置中的「Token 统计口径」统一控制首页、侧边栏、模型分布、热力图与趋势图的主数字：
+
+- **默认关闭**：不含缓存的输入 Token + 输出 Token。
+- **开启包含缓存**：在默认口径上加上缓存读取与写入 Token。
+
+详情始终保留输入、输出、缓存等拆分。切换统计口径只影响 Token 展示，不改变账户额度或账单。
+
+<details>
+<summary>查看不同数据来源的计算规则</summary>
+
+- **Cursor**：`inputTokens` 与缓存字段分列；默认合计为 `inputTokens + outputTokens`，含缓存时再加 `cacheReadTokens + cacheWriteTokens`。
+- **Codex**：`input_tokens` 已包含缓存输入；默认合计为 `input_tokens - cached_input_tokens - cache_write_input_tokens + output_tokens`，含缓存合计为 `input_tokens + output_tokens`。
+- **推理 Token**：Codex 的输出已包含推理 Token，不额外重复累加。
+- **时间范围**：「今日」按本机时区零点起算；Cursor 的「本周期」指订阅账期，Codex 的「本周」指本地时间周一至今，与账户滚动额度窗口分别统计。
+
+</details>
+
+## 本地数据与隐私
+
+seeUtoken 在本机解析会话与项目元数据，当前实现不向项目维护者上传用量或提问内容。读取账户额度仍需连接对应提供方的服务。
+
+详情页会显示匹配到的**用户提问原文**；Codex 提问会去除自动附带的附件清单与环境信息。详情记录不展示系统指令、助手回复、工具输出或登录凭据。分享界面截图时，请留意其中的提问和项目名称。
+
+应用设置与 Cursor 用量缓存保存在：
+
+- **macOS / Linux**：`~/.config/seeUtoken/`
+- **Windows**：`%APPDATA%\seeUtoken\`
+
+其中 `settings.json` 保存偏好及可能设置的手动登录 Token，`usage_cache.json` 保存最近的 Cursor 用量数据。请勿将这些个人数据文件提交到公开仓库。macOS 打包脚本会清除页面中注入的本机启动数据，安装包不包含构建者的账户信息与个人设置。
+
+## 常见问题
+
+### 为什么 Codex 有剩余额度，却没有 Token 用量？
+
+两者的数据来源不同。额度来自账户接口，本机 Token 来自会话日志；只有其他设备上的使用记录，或本机记录已删除时，二者可能不同。请检查 `CODEX_HOME` 是否指向实际使用的目录，并在本机 Codex 中完成一次使用后刷新。
+
+### 为什么「会话内容」或「项目」显示为「—」？
+
+Cursor 需要能够匹配到本机会话历史与项目目录，Codex 需要记录中包含相应元数据。缺少来源数据时，应用保留用量，并以「—」显示无法匹配的字段。
+
+### 为什么 Codex 的剩余额度显示为未知或待更新？
+
+账户接口尚未返回数据，或最近快照的额度窗口已过期。确认 Codex 已登录且网络可用，再点击「立即刷新」；手动刷新模式下，首次同步后需要主动刷新账户额度。
+
+### 关闭窗口后，应用还会留在菜单栏吗？
+
+在 macOS 上，点击主窗口红色关闭按钮会完整退出应用，同时关闭侧边栏与托盘。需要暂时收起时，请最小化或隐藏主窗口；点击 Dock 图标或再次打开应用可以恢复窗口。
+
+### 为什么 Liquid Glass 的效果与其他 Mac 不同？
+
+效果取决于 macOS 版本、原生材质支持和辅助功能设置。较旧系统会回退到 Vibrancy；开启「降低透明度」时会使用不透明背景。
+
+## 开发与构建
+
+### 目录结构
+
+```text
+seeUtoken/
+├── seeutoken/          # Python 后端：账户接入、用量统计、桌面窗口与原生材质
+├── frontend/          # Vue 3 + Ant Design Vue 源码
+├── ui/                # 前端构建产物，供桌面应用加载
+├── assets/            # 应用与托盘图标
+├── packaging/macos/   # macOS 应用与 DMG 打包脚本
+├── tests/             # Python 回归测试
+├── run.py             # 启动入口
+└── requirements.txt   # Python 运行依赖
+```
+
+### 前端开发
+
+在 `frontend/` 目录执行 `npm run dev` 可单独预览页面。修改完成后执行 `npm run build`，将界面更新到 `ui/`，再启动桌面应用验证原生交互。
+
+### 运行测试
+
+在项目根目录、已安装依赖并激活虚拟环境后执行：
 
 ```bash
-python -m seeutoken
+python -m unittest discover -s tests
+node --test frontend/src/pages/float/popupPlacement.test.js frontend/src/pages/float/railDrag.test.js
 ```
 
-## 数据来源
+需要 macOS 窗口服务的原生交互测试默认跳过，可在本机使用 `SEEUTOKEN_NATIVE_TESTS=1` 显式启用。
 
-1. **自动**：读取本机 Cursor 登录库  
-   `%APPDATA%\Cursor\User\globalStorage\state.vscdb`
-2. **手动**：详情页「设置 Token」，粘贴 cursor.com 的 `WorkosCursorSessionToken`
-3. 未登录时显示演示数据
+### 打包 macOS 应用
 
-## 目录
-
-```
-seeutoken/     # Python 后端（鉴权、API、热力图、窗口）
-frontend/      # Vue3 + Ant Design Vue 源码
-ui/            # 前端构建产物（npm run build 生成）
-assets/        # 图标
-run.py         # 启动入口
-requirements.txt
-```
-
-## 说明
-
-Codex 账户额度默认每分钟同步一次；详情页可选择手动、1、5、15、30 分钟，设置会保存，独立于 Cursor。首次读取会同步账户；手动模式之后仅点击「立即刷新」才重新同步。未联网时保留最近的本机额度快照；额度窗口过期后显示未知，等待下一次确认。
-Token、模型和项目明细来自 `CODEX_HOME`（默认 `~/.codex`）中的本机会话与归档记录，每 15 秒更新；按累计计数的差值统计，忽略重复额度快照及会话归档副本，排除内部自动审核模型。本机统计不代表所有设备的云端账单。除用量、模型和项目元数据外，详情页的使用记录会显示对应提问的文字；不显示系统指令、助手回复、工具输出或登录凭据。
-
-Codex「使用记录」按每次提问汇总一条，合并该次提问中所有模型调用的输入、输出和缓存用量，时间显示最近一次调用时间；正在回答的问题随本机记录刷新累计。「会话内容」列显示提问原文，去除自动附带的附件清单和环境信息，长内容省略显示，悬停可查看原文。模型分布、调用次数和每日统计仍按原始调用计算。缺少提问编号及开始标记的旧记录保留各次调用，避免误合并；缺少提问文字时显示「—」。
-
-Cursor 使用记录同样显示「会话内容」，按 conversationId 和调用时间匹配本机 Cursor 中对应的用户提问；仅详情页读取用户消息，不读取助手回复或认证记录。本机历史缺失时显示「—」。两种详情页均采用紧凑列宽，长提问悬停可查看全文，窄窗口中的 Token 明细分两行完整显示。
-
-设置中的「Token 统计口径」可选择是否包含缓存，默认关闭：主数字为 **不含缓存读写的输入 + 输出**；开启后主数字再加缓存读写。偏好自动保存，首页、悬浮栏、模型分布、热力图和趋势图同步切换。详情始终保留输入、输出、缓存及含缓存总量的明细。此设置只改变 Token 统计，不改变账户额度百分比或账单。
-
-- Cursor Dashboard 的 `inputTokens` 与缓存读写分列：不含缓存 = `inputTokens + outputTokens`，含缓存总量再加 `cacheReadTokens + cacheWriteTokens`。
-- Codex 会话的 `input_tokens` 已包含缓存输入：不含缓存 = `input_tokens - cached_input_tokens - cache_write_input_tokens + output_tokens`，含缓存总量 = `input_tokens + output_tokens`。输出已含推理 Token，不重复累加。
-- 今日按本机时区零点起算；Cursor「本周期」指订阅账期，Codex「本周」指本地时间周一至今，均与账户的滚动额度窗口分别统计。
-
-通过 Cursor 网页同款 Dashboard 接口读取你自己的用量；非官方产品。旧的 Electron 版本已弃用，请使用本 Python 版。
-
-## macOS DMG 打包
-
-在 Apple Silicon Mac 安装项目的 Python 和前端依赖后，执行：
+在 Apple Silicon Mac 上准备好 `.venv`、Python 运行依赖和前端依赖后执行：
 
 ```bash
 bash packaging/macos/build.sh
 ```
 
-生成 `dist/seeUtoken-V1.0.0.dmg`，包含独立的 `seeUtoken.app`、Applications 拖拽安装入口及安装说明。当前构建目标为 Apple Silicon、macOS 14 及以上；不支持 Intel Mac。可通过 `SEEU_BUILD_PYTHON` 和 `SEEU_BUILD_NODE` 指定构建工具路径。
+脚本会构建前端、准备资源、使用 PyInstaller 打包应用，并生成：
 
-构建会剔除页面中本机注入的启动数据，运行时把可写页面复制到临时目录，避免改写签名后的应用包。当前版本使用 ad-hoc 签名，未使用 Developer ID 签名及 Apple 公证；首次打开方法见 `packaging/macos/INSTALL.txt`。
+- `dist/seeUtoken.app`
+- `dist/seeUtoken-V1.0.0.dmg`
+- `dist/seeUtoken-V1.0.0.dmg.sha256`
+
+默认使用 `.venv/bin/python` 与系统 `node`，可通过 `SEEU_BUILD_PYTHON` 和 `SEEU_BUILD_NODE` 指定工具路径。当前目标为 **arm64 / macOS 14+**，不提供 Intel Mac 安装包。
+
+## 参与贡献
+
+欢迎通过 [Issues](https://github.com/Alver-Lin/seeUtoken/issues) 反馈问题，或提交 Pull Request 改进功能。报告问题时请附上系统版本、启动方式、涉及的工具及复现步骤，并去除登录 Token 与私密会话内容。
+
+## 致谢
+
+- [Token Monitor](https://github.com/Javis603/token-monitor/blob/main/README.zh-CN.md)：本 README 的内容组织与展示方式参考。
+- [pywebview](https://github.com/r0x0r/pywebview)、[Vue](https://github.com/vuejs/core) 与 [Ant Design Vue](https://github.com/vueComponent/ant-design-vue)：桌面窗口与界面基础。
+
+seeUtoken 是独立的非官方项目，与 Cursor、OpenAI 或其他工具提供方无隶属关系。
