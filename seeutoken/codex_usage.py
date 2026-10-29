@@ -12,6 +12,7 @@ import os
 import queue
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from datetime import datetime, timedelta
@@ -19,6 +20,8 @@ from pathlib import Path
 from typing import Any
 
 from .heatmap import aggregate_days_from_events, build_year_grid
+from . import __version__
+from .process_utils import background_process_options
 
 TOKEN_FIELDS = ("input", "output", "cache", "cacheRead", "cacheWrite", "tokens", "processedTokens")
 
@@ -62,17 +65,47 @@ def timestamp(value: Any) -> int:
         return 0
 
 
-def read_account() -> dict:
-    """Bounded, read-only JSON-RPC connection. Does not create threads or turns."""
-    executable = shutil.which("codex")
+def codex_command() -> list[str]:
+    """Prefer a native binary on Windows; npm's .cmd shim is not an EXE."""
+    executable = os.environ.get("SEEU_CODEX_EXECUTABLE") or shutil.which("codex")
+    if sys.platform == "win32":
+        roots = []
+        if executable:
+            candidate = Path(executable)
+            if candidate.suffix.lower() == ".exe":
+                return [str(candidate)]
+            roots.append(candidate.parent / "node_modules" / "@openai")
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            roots.append(Path(appdata) / "npm" / "node_modules" / "@openai")
+        for root in roots:
+            if root.is_dir():
+                binaries = sorted(root.glob("codex*/vendor/x86_64-pc-windows-msvc/codex/codex.exe"))
+                if binaries:
+                    return [str(binaries[0])]
+        # Run npm's JS entry through node without a shell, so paths containing
+        # spaces or shell metacharacters cannot be interpreted as commands.
+        node = shutil.which("node")
+        for root in roots:
+            script = root / "codex" / "bin" / "codex.js"
+            if node and script.is_file():
+                return [node, str(script)]
+        if executable:
+            raise RuntimeError("无法启动 Codex，请设置 SEEU_CODEX_EXECUTABLE 为 codex.exe 的完整路径")
     if not executable:
         candidates = Path("/Applications").glob("*.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex")
         executable = next((str(p) for p in candidates if p.is_file()), None)
     if not executable:
         raise RuntimeError("未找到 Codex，请先安装并登录 Codex")
+    return [executable]
+
+
+def read_account() -> dict:
+    """Bounded, read-only JSON-RPC connection. Does not create threads or turns."""
     process = subprocess.Popen(
-        [executable, "app-server", "--stdio"], stdin=subprocess.PIPE,
+        [*codex_command(), "app-server", "--stdio"], stdin=subprocess.PIPE,
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, encoding="utf-8",
+        **background_process_options(),
     )
     messages: queue.Queue = queue.Queue()
 
@@ -111,7 +144,7 @@ def read_account() -> dict:
                 send({"id": response["id"], "error": {"code": -32601, "message": "Unsupported request"}})
 
     try:
-        rpc(0, "initialize", {"clientInfo": {"name": "seeutoken", "title": "seeUtoken", "version": "1.0.0"}})
+        rpc(0, "initialize", {"clientInfo": {"name": "seeutoken", "title": "seeUtoken", "version": __version__}})
         send({"method": "initialized", "params": {}})
         account = rpc(1, "account/read", {"refreshToken": False}).get("account")
         limits = rpc(2, "account/rateLimits/read")

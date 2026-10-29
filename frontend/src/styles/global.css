@@ -41,7 +41,7 @@ body,
   accent-color: var(--sut-primary);
 }
 
-:root[data-sut-appearance]:where(:not([data-sut-appearance='light'])) {
+:root:is([data-sut-appearance='dark'], [data-sut-appearance='liquid'], [data-sut-appearance='liquid-clear']) {
   --sut-bg: #111824;
   --sut-surface: #1c2635;
   --sut-inset: #232f40;
@@ -63,6 +63,22 @@ body,
   --sut-surface: rgba(29, 40, 57, .78);
   --sut-inset: rgba(45, 60, 81, .55);
   --sut-border: rgba(204, 224, 255, .18);
+}
+
+:root[data-sut-appearance^='liquid-light'] {
+  --sut-bg: #f1f5f9;
+  --sut-surface: rgba(255, 255, 255, .58);
+  --sut-inset: rgba(241, 246, 252, .48);
+  --sut-border: rgba(120, 143, 172, .28);
+  --sut-secondary: #4b607b;
+  --sut-muted: #61758e;
+  --sut-accent-soft: rgba(219, 235, 255, .64);
+}
+
+:root[data-sut-appearance='liquid-light-clear'] {
+  --sut-surface: rgba(255, 255, 255, .28);
+  --sut-inset: rgba(243, 248, 255, .24);
+  --sut-border: rgba(112, 137, 168, .25);
 }
 
 :root[data-sut-appearance='liquid-clear'] {
@@ -101,7 +117,7 @@ body,
   background: transparent;
 }
 
-:root[data-sut-appearance]:not([data-sut-appearance='light']) :is(.card-icon.codex .card-logo, .card-icon.cursor .card-logo, .toolbar-brand, img.brand) {
+:root:is([data-sut-appearance='dark'], [data-sut-appearance='liquid'], [data-sut-appearance='liquid-clear']) :is(.card-icon.codex .card-logo, .card-icon.cursor .card-logo, .toolbar-brand, img.brand) {
   filter: invert(1);
 }
 
@@ -124,8 +140,7 @@ body,
   --sut-border: #53627a;
 }
 
-:root[data-sut-appearance='light'].native-reduced-transparency,
-:root[data-sut-appearance='light'].native-material-opaque {
+:root:is([data-sut-appearance='light'], [data-sut-appearance^='liquid-light']):is(.native-reduced-transparency, .native-material-opaque) {
   --sut-bg: #f5f7f9;
   --sut-surface: #fff;
   --sut-inset: #f8fafc;

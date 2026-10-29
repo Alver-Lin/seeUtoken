@@ -178,13 +178,13 @@
           <div class="float-settings-row">
             <div>
               <div class="float-settings-label">贴边自动缩进</div>
-              <div class="float-settings-desc">靠近屏幕左右边缘后移出鼠标收起，悬停展开（macOS）</div>
+              <div class="float-settings-desc">{{ supportsNativeDocking ? '靠近屏幕左右边缘后移出鼠标收起，悬停展开（macOS）' : '当前平台支持拖动与置顶，贴边自动缩进仅适用于 macOS' }}</div>
             </div>
             <a-switch
               aria-label="贴边自动缩进"
-              :checked="floatAutoHide"
+              :checked="supportsNativeDocking && floatAutoHide"
               :loading="floatSettingsSaving"
-              :disabled="floatSettingsSaving"
+              :disabled="floatSettingsSaving || !supportsNativeDocking"
               @change="onFloatBehaviorChange('floatAutoHide', $event)"
             />
           </div>
@@ -300,6 +300,9 @@ const canCreatePanel = computed(() => panelsLoaded.value && !creating.value &&
 const settingsOpen = ref(false);
 const showFloat = ref(true);
 const floatAutoHide = ref(true);
+const supportsNativeDocking = window.__seeUtokenFloatSettings?.platform
+  ? window.__seeUtokenFloatSettings.platform === 'darwin'
+  : /Macintosh|Mac OS X/.test(navigator.userAgent);
 const floatAlwaysOnTop = ref(true);
 const floatExpanded = ref(false);
 const floatSettingsSaving = ref(false);

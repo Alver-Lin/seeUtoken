@@ -7,7 +7,7 @@ import sys
 from typing import Any
 
 from .mac_liquid_glass import MacLiquidGlass, liquid_glass_supported
-from .storage import normalize_float_glass_style
+from .storage import is_light_appearance, is_liquid_glass_style, normalize_float_glass_style
 
 
 def _run_on_main(block) -> None:
@@ -108,6 +108,10 @@ def _fix_webview_transparency(ns_window: Any) -> None:
 def _style_from_settings(settings: dict) -> tuple[str, float]:
     """返回 (glass_style, tint_opacity 0..1)。"""
     mode = normalize_float_glass_style(settings.get("floatGlassStyle"))
+    if mode == "liquid-light":
+        return "regular", 0.12
+    if mode == "liquid-light-clear":
+        return "clear", 0.24
     if mode == "liquid":
         return "regular", 0.0
     if mode == "liquid-clear":
@@ -195,6 +199,10 @@ class FloatNativeMaterialController:
         if sys.platform == "darwin":
             _run_on_main(work)
         else:
+            if sys.platform == "win32":
+                from .windows_float import apply_sidebar
+
+                apply_sidebar(self._win, self._state.get("floatStyle", "light"), self._shape)
             work()
 
     def sync(self, settings: dict | None = None, on_complete=None) -> dict[str, Any]:
@@ -202,6 +210,11 @@ class FloatNativeMaterialController:
         mode = normalize_float_glass_style(settings.get("floatGlassStyle"))
         if sys.platform != "darwin":
             self._state["floatStyle"] = mode
+            if sys.platform == "win32":
+                from .windows_float import apply_sidebar
+
+                self._state["type"] = "opaque"
+                apply_sidebar(self._win, mode, self._shape)
             self._synced = True
             if on_complete:
                 on_complete()
@@ -213,7 +226,7 @@ class FloatNativeMaterialController:
         # Liquid 模式：整窗 NSGlassEffectView 按前端上报的轮廓成型（token-monitor
         # edgeDock 同款）；rail/pop 两种观感靠 style/tint 区分，不再各叠 CSS 材质
         use_window_liquid = (
-            mode in ("liquid", "liquid-clear")
+            is_liquid_glass_style(mode)
             and os.environ.get("SEEU_FLOAT_NATIVE_GLASS") != "0"
         )
 
@@ -241,7 +254,7 @@ class FloatNativeMaterialController:
                     self._glass = MacLiquidGlass(ns, shaped=True)
                     g_style, tint = _style_from_settings(settings)
                     self._glass_params = {
-                        "dark": True,
+                        "dark": not is_light_appearance(mode),
                         "radius": 16,
                         # 轮廓未上报前先隐藏，避免整窗矩形玻璃一闪而过
                         "visible": self._shape is not None and not self._shape.get("collapsed", False),

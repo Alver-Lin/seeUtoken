@@ -73,6 +73,20 @@ class FloatMaterialStartupTests(unittest.TestCase):
         self.assertEqual(self.events.count("ready"), 1)
         self.assertEqual(self.glass.update.call_args.kwargs["style"], "clear")
 
+    def test_white_glass_uses_light_native_appearance_and_saved_style(self):
+        self.controller.update_shape(SHAPE)
+        for mode, style, tint in [("liquid-light", "regular", .12), ("liquid-light-clear", "clear", .24)]:
+            with self.subTest(mode=mode):
+                self.sync(mode)
+                self.drain()
+                self.assertEqual(self.controller.get_state()["type"], "liquid-glass")
+                self.assertEqual(self.controller.get_state()["floatStyle"], mode)
+                params = self.glass.update.call_args.kwargs
+                self.assertFalse(params["dark"])
+                self.assertEqual(params["style"], style)
+                self.assertEqual(params["tint_opacity"], tint)
+                self.assertEqual(params["shape"], {**SHAPE, "collapsed": False})
+
     def test_regular_styles_remove_native_glass_and_can_switch_back(self):
         self.controller.update_shape(SHAPE)
         self.sync()
@@ -198,7 +212,7 @@ class FloatWindowStartupTests(unittest.TestCase):
             self.assertTrue(app.float_win.on_top)
 
     def test_bootstrap_contains_saved_appearance_before_module(self):
-        for mode in ("light", "dark", "liquid", "liquid-clear"):
+        for mode in ("light", "dark", "liquid", "liquid-clear", "liquid-light", "liquid-light-clear"):
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 (root / "float").mkdir()

@@ -24,11 +24,11 @@ collection = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='see
 app = BUNDLE(
     collection, name='seeUtoken.app',
     icon=str(ROOT / 'build' / 'macos' / 'seeUtoken.icns'),
-    bundle_identifier='com.seeutoken.desktop', version='1.0.0',
+    bundle_identifier='com.seeutoken.desktop', version='1.0.1',
     info_plist={
         'CFBundleDisplayName': 'seeUtoken',
-        'CFBundleShortVersionString': '1.0.0',
-        'CFBundleVersion': '1.0.0',
+        'CFBundleShortVersionString': '1.0.1',
+        'CFBundleVersion': '1.0.1',
         'LSMinimumSystemVersion': '14.0',
         'LSApplicationCategoryType': 'public.app-category.utilities',
         'NSHighResolutionCapable': True,

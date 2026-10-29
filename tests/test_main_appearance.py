@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 from seeutoken.app import SeeUtokenApp
 from seeutoken.main_native_material import MainNativeMaterialController
+from seeutoken.mac_liquid_glass import MacLiquidGlass
 
 
 class MainMaterialTests(unittest.TestCase):
@@ -37,10 +38,13 @@ class MainMaterialTests(unittest.TestCase):
         return self.controller.get_state()
 
     def test_glass_variants_use_full_window_without_float_shape(self):
-        for mode, style, tint in [('liquid', 'regular', 0), ('liquid-clear', 'clear', .35)]:
+        for mode, style, tint, dark in [
+            ('liquid', 'regular', 0, True), ('liquid-clear', 'clear', .35, True),
+            ('liquid-light', 'regular', .12, False), ('liquid-light-clear', 'clear', .24, False),
+        ]:
             with self.subTest(mode=mode):
                 self.assertEqual(self.sync(mode)['type'], 'liquid-glass')
-                self.glass.update.assert_called_with(dark=True, radius=0, style=style, tint_opacity=tint)
+                self.glass.update.assert_called_with(dark=dark, radius=0, style=style, tint_opacity=tint)
                 self.mocks[4].assert_called_with(self.ns, mode, True)
                 self.mocks[-1].assert_called_with(self.ns)
 
@@ -82,6 +86,38 @@ class MainMaterialTests(unittest.TestCase):
             self.assertEqual(self.sync('dark')['type'], 'opaque')
         self.mocks[-1].assert_not_called()
 
+    def test_white_modes_keep_light_appearance_when_native_glass_is_unavailable(self):
+        for mode in ['liquid-light', 'liquid-light-clear']:
+            with self.subTest(mode=mode):
+                with patch('seeutoken.main_native_material.liquid_glass_supported', return_value=False):
+                    self.assertEqual(self.sync(mode)['type'], 'vibrancy')
+                    self.mocks[4].assert_called_with(self.ns, mode, True)
+                with patch('seeutoken.main_native_material._reduce_transparency', return_value=True):
+                    self.assertEqual(self.sync(mode)['type'], 'opaque')
+                    self.mocks[4].assert_called_with(self.ns, mode, False)
+
+
+class GlassTintTests(unittest.TestCase):
+    def test_switching_appearance_refreshes_tint_even_with_same_opacity(self):
+        glass = MacLiquidGlass.__new__(MacLiquidGlass)
+        glass._disposed = False
+        glass._glass = Mock()
+        glass._sync_force_main = Mock()
+        glass._last_style = 'clear'
+        glass._last_tint = -1
+        glass._last_dark = None
+        glass._last_visible = True
+        glass._last_radius = 16
+        color = Mock()
+        appearance = Mock()
+        with patch.dict('sys.modules', {'AppKit': SimpleNamespace(NSColor=color, NSAppearance=appearance)}):
+            glass.update(dark=False, style='clear', tint_opacity=.24)
+            color.colorWithSRGBRed_green_blue_alpha_.assert_called_with(1, 1, 1, .24)
+            appearance.appearanceNamed_.assert_called_with('NSAppearanceNameAqua')
+            glass.update(dark=True, style='clear', tint_opacity=.24)
+            color.colorWithSRGBRed_green_blue_alpha_.assert_called_with(0, 0, 0, .24)
+            appearance.appearanceNamed_.assert_called_with('NSAppearanceNameDarkAqua')
+
 
 class MainAppearanceIntegrationTests(unittest.TestCase):
     def app(self, mode):
@@ -97,7 +133,7 @@ class MainAppearanceIntegrationTests(unittest.TestCase):
         return app
 
     def test_both_main_pages_bootstrap_saved_mode_before_modules(self):
-        for mode in ['light', 'dark', 'liquid', 'liquid-clear']:
+        for mode in ['light', 'dark', 'liquid', 'liquid-clear', 'liquid-light', 'liquid-light-clear']:
             with self.subTest(mode=mode), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 app = self.app(mode)
@@ -114,6 +150,8 @@ class MainAppearanceIntegrationTests(unittest.TestCase):
                     self.assertEqual(html.count('window.__seeUtokenFloatSettings='), 1)
                     self.assertIn(json.dumps(mode), html)
                     self.assertNotIn('secret', html)
+                    scheme = 'light' if mode in ['light', 'liquid-light', 'liquid-light-clear'] else 'dark'
+                    self.assertIn(f"style.colorScheme='{scheme}'", html)
 
     def test_main_updates_even_when_float_is_hidden(self):
         app = self.app('dark')

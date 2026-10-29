@@ -223,9 +223,12 @@ class MacLiquidGlass:
         # 只改外观不改真实焦点（token-monitor syncGlassAppearance）
         self._sync_force_main(next_style == "clear" or tint > 0)
 
-        if tint != self._last_tint:
+        if tint != self._last_tint or dark != self._last_dark:
             if tint > 0:
-                color = NSColor.colorWithSRGBRed_green_blue_alpha_(0, 0, 0, tint)
+                # Light glass uses a white tint; refresh it when appearance changes
+                # even if the opacity stays the same.
+                channel = 0 if dark else 1
+                color = NSColor.colorWithSRGBRed_green_blue_alpha_(channel, channel, channel, tint)
                 glass.setTintColor_(color)
             elif glass.respondsToSelector_("setTintColor:"):
                 from objc import nil

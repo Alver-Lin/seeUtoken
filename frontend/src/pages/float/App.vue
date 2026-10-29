@@ -160,7 +160,7 @@ import AnimatedMetric from '../../components/AnimatedMetric.vue';
 import cursorLogo from '../../assets/brand/cursor-logo-white.svg';
 import codexLogo from '../../assets/brand/codex-logo.svg';
 import qoderLogo from '../../assets/brand/qoder-logo.svg';
-import { normalizeFloatGlassStyle } from '../../constants/floatGlass';
+import { isLightAppearance, normalizeFloatGlassStyle } from '../../constants/floatGlass';
 import './glass.css';
 import './solid.css';
 import { useLiquidGlass } from './useLiquidGlass';
@@ -210,7 +210,7 @@ function codexResetTime(item) {
   return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`;
 }
 const floatGlassStyle = ref(normalizeFloatGlassStyle(bootstrapSettings?.floatGlassStyle));
-const donutTrack = computed(() => floatGlassStyle.value === 'light' ? '#e2e8f0' : 'rgba(255,255,255,.12)');
+const donutTrack = computed(() => isLightAppearance(floatGlassStyle.value) ? 'rgba(51,65,85,.15)' : 'rgba(255,255,255,.12)');
 const nativeMaterialTick = ref(0);
 let floatGlassSyncTimer = null;
 const popCardRef = ref(null);

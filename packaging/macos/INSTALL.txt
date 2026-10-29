@@ -1,4 +1,4 @@
-seeUtoken 1.0.0
+seeUtoken 1.0.1
 
 系统要求：Apple Silicon（M1 / M2 / M3 / M4 等 M 系列芯片），macOS 14 或更高版本。
 本安装包不适用于 Intel Mac。

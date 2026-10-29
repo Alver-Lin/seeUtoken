@@ -1,4 +1,5 @@
 import copy
+from contextlib import closing
 import json
 import sqlite3
 import tempfile
@@ -17,13 +18,13 @@ class CursorQuestionTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.path = Path(self.tmp.name) / 'state.vscdb'
-        with sqlite3.connect(self.path) as conn:
+        with closing(sqlite3.connect(self.path)) as conn, conn:
             conn.execute('CREATE TABLE cursorDiskKV (key TEXT PRIMARY KEY, value TEXT)')
             conn.execute('CREATE TABLE ItemTable (key TEXT PRIMARY KEY, value TEXT)')
             conn.execute('INSERT INTO ItemTable VALUES (?, ?)', ('cursorAuth/accessToken', 'PRIVATE TOKEN'))
 
     def put(self, key, value):
-        with sqlite3.connect(self.path) as conn:
+        with closing(sqlite3.connect(self.path)) as conn, conn:
             conn.execute('INSERT OR REPLACE INTO cursorDiskKV VALUES (?, ?)', (key, json.dumps(value)))
 
     def conversation(self, cid='chat', text='第一条问题'):
@@ -67,7 +68,7 @@ class CursorQuestionTests(unittest.TestCase):
         self.assertEqual(add_cursor_questions(events, self.path.with_name('missing'))[0]['prompt'], '')
         self.put('composerData:chat', ['invalid composer'])
         self.assertEqual(add_cursor_questions(events, self.path)[0]['prompt'], '')
-        with sqlite3.connect(self.path) as conn:
+        with closing(sqlite3.connect(self.path)) as conn, conn:
             conn.execute('DROP TABLE cursorDiskKV')
         self.assertEqual(add_cursor_questions(events, self.path)[0]['prompt'], '')
 

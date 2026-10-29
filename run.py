@@ -46,6 +46,10 @@ def _stop_previous() -> None:
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        from seeutoken.windows_runtime import main as windows_main
+
+        raise SystemExit(windows_main())
     _stop_previous()
     os.chdir(ROOT)
     print(f"[seeUtoken] UI 目录: {ROOT / 'ui'}")

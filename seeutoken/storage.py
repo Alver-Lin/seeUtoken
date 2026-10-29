@@ -26,14 +26,24 @@ DEFAULT_SETTINGS: dict[str, Any] = {
     "floatX": None,
     "floatY": None,
     "panels": list(DEFAULT_PANELS),
-    # light | dark | liquid | liquid-clear
+    # light | dark | liquid | liquid-clear | liquid-light | liquid-light-clear
     "floatGlassStyle": "light",
 }
+
+FLOAT_GLASS_STYLES = ("light", "dark", "liquid", "liquid-clear", "liquid-light", "liquid-light-clear")
+
+
+def is_light_appearance(mode: str) -> bool:
+    return mode in ("light", "liquid-light", "liquid-light-clear")
+
+
+def is_liquid_glass_style(mode: str) -> bool:
+    return mode in FLOAT_GLASS_STYLES and mode.startswith("liquid")
 
 
 def normalize_float_glass_style(value: Any) -> str:
     mode = str(value or "").strip()
-    return mode if mode in ("light", "dark", "liquid", "liquid-clear") else DEFAULT_SETTINGS["floatGlassStyle"]
+    return mode if mode in FLOAT_GLASS_STYLES else DEFAULT_SETTINGS["floatGlassStyle"]
 
 
 def normalize_panels(value: Any) -> list[dict[str, Any]]:
