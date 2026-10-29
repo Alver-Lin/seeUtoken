@@ -36,6 +36,9 @@ class WindowsCodexTests(unittest.TestCase):
         binary = self.root / 'npm' / 'node_modules' / '@openai' / 'codex-win32-x64' / 'vendor' / 'x86_64-pc-windows-msvc' / 'codex' / 'codex.exe'
         binary.parent.mkdir(parents=True)
         binary.write_bytes(b'MZ')
+        other_arch = self.root / 'npm' / 'node_modules' / '@openai' / 'codex-win32-arm64' / 'vendor' / 'aarch64-pc-windows-msvc' / 'codex' / 'codex.exe'
+        other_arch.parent.mkdir(parents=True)
+        other_arch.write_bytes(b'MZ')
         with patch('seeutoken.codex_usage.shutil.which', return_value=str(self.root / 'npm' / 'codex.cmd')):
             self.assertEqual(codex_command(), [str(binary)])
 

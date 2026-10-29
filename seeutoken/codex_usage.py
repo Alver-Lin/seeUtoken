@@ -80,7 +80,7 @@ def codex_command() -> list[str]:
             roots.append(Path(appdata) / "npm" / "node_modules" / "@openai")
         for root in roots:
             if root.is_dir():
-                binaries = sorted(root.glob("codex*/vendor/*/codex/codex.exe"))
+                binaries = sorted(root.glob("codex*/vendor/x86_64-pc-windows-msvc/codex/codex.exe"))
                 if binaries:
                     return [str(binaries[0])]
         # Run npm's JS entry through node without a shell, so paths containing
