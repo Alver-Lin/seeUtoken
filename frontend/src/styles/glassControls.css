@@ -29,6 +29,31 @@
   --sut-material-blur: blur(12px) saturate(125%);
 }
 
+:root[data-sut-appearance^='liquid-light'] {
+  --sut-elevated: rgba(255, 255, 255, .84);
+  --sut-control: rgba(255, 255, 255, .56);
+  --sut-control-hover: rgba(226, 237, 251, .76);
+  --sut-overlay-row: rgba(246, 250, 255, .52);
+  --sut-primary-fill: rgba(22, 119, 255, .84);
+  --sut-primary-hover: rgba(22, 119, 255, .96);
+  --sut-primary-border: rgba(22, 119, 255, .5);
+  --sut-selected: rgba(185, 216, 255, .56);
+  --sut-danger-fill: rgba(208, 44, 66, .84);
+  --sut-danger-hover: rgba(208, 44, 66, .96);
+  --sut-mask: rgba(35, 52, 73, .18);
+  --sut-material-blur: blur(20px) saturate(135%);
+}
+
+:root[data-sut-appearance='liquid-light-clear'] {
+  --sut-elevated: rgba(255, 255, 255, .62);
+  --sut-control: rgba(255, 255, 255, .30);
+  --sut-control-hover: rgba(225, 237, 252, .54);
+  --sut-overlay-row: rgba(246, 250, 255, .28);
+  --sut-selected: rgba(185, 216, 255, .40);
+  --sut-mask: rgba(35, 52, 73, .12);
+  --sut-material-blur: blur(12px) saturate(125%);
+}
+
 :root[data-sut-appearance^='liquid'] :is(
   .ant-modal-content, .ant-select-dropdown, .ant-dropdown-menu,
   .ant-popover-inner, .ant-message-notice-content, .ant-notification-notice,
@@ -185,6 +210,20 @@
   --sut-material-blur: none;
 }
 
+:root[data-sut-appearance^='liquid-light']:is(.native-reduced-transparency, .native-material-opaque) {
+  --sut-elevated: #fff;
+  --sut-control: #f8fafc;
+  --sut-control-hover: #e8f0fa;
+  --sut-overlay-row: #f1f5f9;
+  --sut-primary-fill: #1677ff;
+  --sut-primary-hover: #0958d9;
+  --sut-primary-border: #1677ff;
+  --sut-selected: #dbeafe;
+  --sut-danger-fill: #cf2840;
+  --sut-danger-hover: #af2035;
+  --sut-mask: rgba(35, 52, 73, .3);
+}
+
 @media (prefers-reduced-transparency: reduce) {
   :root[data-sut-appearance^='liquid'] {
     --sut-bg: #111824;
@@ -200,6 +239,24 @@
     --sut-danger-fill: #ba3448;
     --sut-danger-hover: #d84359;
     --sut-material-blur: none;
+  }
+
+  :root[data-sut-appearance^='liquid-light'] {
+    --sut-bg: #f5f7f9;
+    --sut-surface: #fff;
+    --sut-inset: #f8fafc;
+    --sut-border: #c5cfdb;
+    --sut-elevated: #fff;
+    --sut-control: #f8fafc;
+    --sut-control-hover: #e8f0fa;
+    --sut-overlay-row: #f1f5f9;
+    --sut-primary-fill: #1677ff;
+    --sut-primary-hover: #0958d9;
+    --sut-primary-border: #1677ff;
+    --sut-selected: #dbeafe;
+    --sut-danger-fill: #cf2840;
+    --sut-danger-hover: #af2035;
+    --sut-mask: rgba(35, 52, 73, .3);
   }
 }
 

@@ -1,13 +1,13 @@
 import { computed, defineComponent, h, ref } from 'vue';
 import { ConfigProvider, theme } from 'ant-design-vue';
 import { seeUtoken } from '../bridge';
-import { normalizeFloatGlassStyle } from '../constants/floatGlass';
+import { isClearGlassStyle, isLightAppearance, isLiquidMode, normalizeFloatGlassStyle } from '../constants/floatGlass';
 import { applyNativeMaterialClasses, normalizeNativeMaterialState } from './nativeMaterial';
 
 // Shared by the home page and both dashboards. Keep the persisted setting compatible.
 export const mainAppearance = ref(normalizeFloatGlassStyle(window.__seeUtokenFloatSettings?.floatGlassStyle));
 const nativeMaterial = ref(normalizeNativeMaterialState(window.__seeUtokenNativeMaterial));
-export const mainIsDark = computed(() => mainAppearance.value !== 'light');
+export const mainIsDark = computed(() => !isLightAppearance(mainAppearance.value));
 const chartTrack = computed(() => mainIsDark.value ? '#364356' : '#e6ebf2');
 
 export function applyMainAppearance(settings) {
@@ -47,16 +47,23 @@ export function appearanceRoot(component) {
   return defineComponent({
     setup() {
       const config = computed(() => {
-        const glass = mainAppearance.value.startsWith('liquid') &&
+        const glass = isLiquidMode(mainAppearance.value) &&
           !nativeMaterial.value.reducedTransparency && nativeMaterial.value.type !== 'opaque';
-        const clear = mainAppearance.value === 'liquid-clear';
+        const clear = isClearGlassStyle(mainAppearance.value);
+        const dark = mainIsDark.value;
         return {
           algorithm: mainIsDark.value ? theme.darkAlgorithm : theme.defaultAlgorithm,
           token: {
             colorPrimary: mainIsDark.value ? '#579dff' : '#1677ff',
             colorBgBase: mainIsDark.value ? '#161e2b' : '#ffffff',
-            colorBgContainer: glass ? (clear ? 'rgba(83, 106, 139, 0.16)' : 'rgba(68, 88, 116, 0.28)') : mainIsDark.value ? '#222d3e' : '#ffffff',
-            colorBgElevated: glass ? (clear ? 'rgba(22, 33, 49, 0.42)' : 'rgba(24, 35, 51, 0.76)') : mainIsDark.value ? '#263245' : '#ffffff',
+            colorBgContainer: glass
+              ? dark ? (clear ? 'rgba(83, 106, 139, 0.16)' : 'rgba(68, 88, 116, 0.28)')
+                : (clear ? 'rgba(255, 255, 255, 0.30)' : 'rgba(255, 255, 255, 0.56)')
+              : dark ? '#222d3e' : '#ffffff',
+            colorBgElevated: glass
+              ? dark ? (clear ? 'rgba(22, 33, 49, 0.42)' : 'rgba(24, 35, 51, 0.76)')
+                : (clear ? 'rgba(255, 255, 255, 0.62)' : 'rgba(255, 255, 255, 0.84)')
+              : dark ? '#263245' : '#ffffff',
             colorBgMask: glass ? (clear ? 'rgba(4, 10, 20, 0.18)' : 'rgba(4, 10, 20, 0.28)') : 'rgba(0, 0, 0, 0.45)',
             colorText: mainIsDark.value ? '#edf2fa' : '#1f2937',
             colorTextSecondary: mainIsDark.value ? '#aebbd0' : '#64748b',

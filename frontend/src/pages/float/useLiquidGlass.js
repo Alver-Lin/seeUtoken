@@ -1,14 +1,11 @@
 import { nextTick, onMounted, onUnmounted, watch } from 'vue';
+import { isClearGlassStyle, isLiquidMode } from '../../constants/floatGlass';
 import {
   applyLiquidGlassBackdrop,
   clearLiquidGlassBackdrop,
   isChromiumBackdrop,
   upsertLiquidGlassFilter,
 } from './liquidGlassEngine';
-
-function isLiquidMode(style) {
-  return style === 'liquid' || style === 'liquid-clear';
-}
 
 /** 原生 NSGlassEffectView 已接管整窗轮廓时，CSS/SVG 玻璃退场（token-monitor 分层） */
 function nativeLiquidActive() {
@@ -70,7 +67,7 @@ export function useLiquidGlass({ popRef, railRef, glassStyle, hoveredId, nativeM
         observeSurface({
           el: railEl,
           filterId: 'seeu-lg-rail',
-          shape: glassStyle.value === 'liquid-clear' ? 'clear' : 'standard',
+          shape: isClearGlassStyle(glassStyle.value) ? 'clear' : 'standard',
           getStyle: () => glassStyle.value,
         })
       );

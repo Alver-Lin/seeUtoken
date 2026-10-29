@@ -36,8 +36,7 @@
 }
 
 /* —— liquid 公共变量 —— */
-.root[data-glass='liquid'],
-.root[data-glass='liquid-clear'] {
+.root[data-glass^='liquid'] {
   --lg-shadow-blur: 22px;
   --lg-shadow-spread: -6px;
   --lg-shadow-color: rgba(255, 255, 255, 0.38);
@@ -72,9 +71,32 @@
   --lg-tint-opacity-rail: 0.05;
 }
 
+.root[data-glass^='liquid-light'] {
+  --float-glass-rgb: 248, 251, 255;
+  --float-line-rgb: 91, 113, 143;
+  --float-overlay-rgb: 255, 255, 255;
+  --float-sunken-rgb: 221, 232, 246;
+  --liquid-glass-specular: inset 0 1px 0 rgba(255, 255, 255, .88), inset 0 -1px 0 rgba(255, 255, 255, .24);
+  --float-tail-fill: rgba(var(--float-glass-rgb), .72);
+  --rail-tint: rgba(255, 255, 255, .56);
+  --rail-accent: rgba(229, 240, 255, .32);
+  --pop-tint: rgba(var(--float-glass-rgb), .78);
+  --pop-gradient: linear-gradient(180deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, .08));
+  --pop-shadow: 0 14px 34px rgba(36, 59, 91, .16);
+  --lg-backdrop-fallback-rail: blur(24px) saturate(1.35) brightness(1.08);
+}
+
+.root[data-glass='liquid-light-clear'] {
+  --float-tail-fill: rgba(var(--float-glass-rgb), .44);
+  --rail-tint: rgba(255, 255, 255, .28);
+  --rail-accent: rgba(229, 240, 255, .18);
+  --pop-tint: rgba(var(--float-glass-rgb), .48);
+  --pop-blur: blur(16px) saturate(130%);
+  --lg-backdrop-fallback-rail: blur(16px) saturate(1.25) brightness(1.06);
+}
+
 /* —— 弹窗：token-monitor「致密磨砂板」（渐变 + 86% 底色 + 反光边） —— */
-.root[data-glass='liquid'] .glass-surface--pop,
-.root[data-glass='liquid-clear'] .glass-surface--pop {
+.root[data-glass^='liquid'] .glass-surface--pop {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -85,16 +107,13 @@
   backdrop-filter: var(--pop-blur);
 }
 
-.root[data-glass='liquid'] .glass-surface--pop::before,
-.root[data-glass='liquid-clear'] .glass-surface--pop::before,
-.root[data-glass='liquid'] .glass-surface--pop::after,
-.root[data-glass='liquid-clear'] .glass-surface--pop::after {
+.root[data-glass^='liquid'] .glass-surface--pop::before,
+.root[data-glass^='liquid'] .glass-surface--pop::after {
   display: none;
 }
 
 /* —— 侧栏：Liquid 胶囊（高饱和 + 冷色折射感） —— */
-.root[data-glass='liquid'] .glass-surface--rail,
-.root[data-glass='liquid-clear'] .glass-surface--rail {
+.root[data-glass^='liquid'] .glass-surface--rail {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -106,8 +125,7 @@
     0 0 28px rgba(80, 160, 255, 0.12);
 }
 
-.root[data-glass='liquid'] .glass-surface--rail::before,
-.root[data-glass='liquid-clear'] .glass-surface--rail::before {
+.root[data-glass^='liquid'] .glass-surface--rail::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -128,8 +146,7 @@
   );
 }
 
-.root[data-glass='liquid'] .glass-surface--rail::after,
-.root[data-glass='liquid-clear'] .glass-surface--rail::after {
+.root[data-glass^='liquid'] .glass-surface--rail::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -140,8 +157,7 @@
   backdrop-filter: var(--lg-backdrop, var(--lg-backdrop-fallback-rail));
 }
 
-.root[data-glass='liquid'] .glass-surface--rail.glass-liquid-active::before,
-.root[data-glass='liquid-clear'] .glass-surface--rail.glass-liquid-active::before {
+.root[data-glass^='liquid'] .glass-surface--rail.glass-liquid-active::before {
   background-size: 240% 240%;
   animation: liquid-specular 7s ease-in-out infinite;
 }

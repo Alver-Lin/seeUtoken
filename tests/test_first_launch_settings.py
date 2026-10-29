@@ -29,7 +29,7 @@ class FirstLaunchSettingsTests(unittest.TestCase):
         self.assertEqual(SeeUtokenApp._float_settings_payload({})['floatGlassStyle'], 'light')
 
     def test_existing_preferences_are_preserved_on_restart(self):
-        for mode in ['light', 'dark', 'liquid', 'liquid-clear']:
+        for mode in ['light', 'dark', 'liquid', 'liquid-clear', 'liquid-light', 'liquid-light-clear']:
             with self.subTest(mode=mode):
                 preferences = {'includeCachedTokens': True, 'floatGlassStyle': mode,
                                'showFloat': False, 'floatAutoHide': False, 'floatAlwaysOnTop': False}

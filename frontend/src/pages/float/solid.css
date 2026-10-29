@@ -1,5 +1,5 @@
 /* Opaque surfaces stay confined to the rail and popup, never the WebView. */
-.root[data-glass='light'] {
+.root:is([data-glass='light'], [data-glass^='liquid-light']) {
   --solid-bg: #fff;
   --solid-border: #dfe5ed;
   --solid-text: #182230;
@@ -27,6 +27,14 @@
   --float-tail-stroke: #383f4b;
 }
 
+.root[data-glass^='liquid-light'] {
+  --solid-inset: rgba(235, 243, 253, .52);
+  --solid-hover: rgba(218, 233, 252, .68);
+  --solid-border: rgba(91, 113, 143, .22);
+  --float-tail-fill: var(--pop-tint);
+  --float-tail-stroke: var(--pop-border);
+}
+
 html .root:is([data-glass='light'], [data-glass='dark']) .glass-surface {
   background: var(--solid-bg);
   border: 1px solid var(--solid-border);
@@ -45,50 +53,54 @@ html .root:is([data-glass='light'], [data-glass='dark']) .pop-tail {
   display: block;
 }
 
-html .root:is([data-glass='light'], [data-glass='dark']) :is(.ring, .pop-refresh) {
+html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) :is(.ring, .pop-refresh) {
   background: var(--solid-inset);
   box-shadow: inset 0 0 0 1px var(--solid-border);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
 
-.root:is([data-glass='light'], [data-glass='dark']) .ring-track {
+.root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) .ring-track {
   stroke: var(--solid-track);
 }
 
-html .root:is([data-glass='light'], [data-glass='dark']) :is(.pct, .pop-title, .pop-plan, .pop-refresh, .donut-pct, .pop-status),
-html .root:is([data-glass='light'], [data-glass='dark']) .pop .anim-metric {
+html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) :is(.pop, .item, .pct, .pop-title, .pop-plan, .pop-refresh, .donut-pct, .pop-status),
+html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) .pop .anim-metric {
   color: var(--solid-text);
   text-shadow: none;
 }
 
-html .root:is([data-glass='light'], [data-glass='dark']) :is(.donut-cap, .pop-donut-name, .pop-reset, .codex-reset-time, .pop-desc) {
+html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) :is(.donut-cap, .pop-donut-name, .pop-reset, .codex-reset-time, .pop-desc) {
   color: var(--solid-secondary);
 }
 
-.root:is([data-glass='light'], [data-glass='dark']) :is(.pct.muted, .pop-total-label) {
+.root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) :is(.pct.muted, .pop-total-label) {
   color: var(--solid-muted);
 }
 
-.root:is([data-glass='light'], [data-glass='dark']) .pop-total-row {
+.root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) .pop-total-row {
   background: var(--solid-inset);
   border-color: var(--solid-border);
   box-shadow: none;
 }
 
-.root:is([data-glass='light'], [data-glass='dark']) .pop-refresh:hover:not(:disabled) {
+.root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) .pop-refresh:hover:not(:disabled) {
   background: var(--solid-hover);
   color: var(--solid-text);
 }
 
-.root:is([data-glass='light'], [data-glass='dark']) .ring.provider-busy::after {
+.root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) .ring.provider-busy::after {
   border-top-color: var(--solid-text);
   border-right-color: var(--solid-text);
 }
 
-html .root[data-glass='light'] .icon.cursor .icon-img,
-html .root[data-glass='light'] .icon.codex .icon-img,
-html .root[data-glass='light'] .icon.qoder .icon-img,
-html .root[data-glass='light'] .pop .pop-logo {
+html .root:is([data-glass='light'], [data-glass^='liquid-light']) .icon.cursor .icon-img,
+html .root:is([data-glass='light'], [data-glass^='liquid-light']) .icon.codex .icon-img,
+html .root:is([data-glass='light'], [data-glass^='liquid-light']) .icon.qoder .icon-img,
+html .root:is([data-glass='light'], [data-glass^='liquid-light']) .pop .pop-logo {
   filter: brightness(0);
+}
+
+.root[data-glass^='liquid-light'] .edge-tab {
+  background: #d6e1ef;
 }

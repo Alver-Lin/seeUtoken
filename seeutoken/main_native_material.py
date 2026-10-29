@@ -12,13 +12,13 @@ from .float_native_material import (
     _style_from_settings,
 )
 from .mac_liquid_glass import MacLiquidGlass, liquid_glass_supported
-from .storage import normalize_float_glass_style
+from .storage import is_light_appearance, is_liquid_glass_style, normalize_float_glass_style
 
 
 def _configure_window(ns, mode: str, transparent: bool) -> None:
     from AppKit import NSAppearance, NSColor
 
-    dark = mode != "light"
+    dark = not is_light_appearance(mode)
     ns.setAppearance_(NSAppearance.appearanceNamed_("NSAppearanceNameDarkAqua" if dark else "NSAppearanceNameAqua"))
     ns.setOpaque_(not transparent)
     ns.setHasShadow_(True)
@@ -59,7 +59,7 @@ def _configure_window(ns, mode: str, transparent: bool) -> None:
                 material.setState_(NSVisualEffectStateActive)
                 container.addSubview_positioned_relativeTo_(material, NSWindowBelow, titlebar)
             material.setAppearance_(ns.appearance())
-            material.setAlphaValue_(.85 if mode == "liquid-clear" else 1)
+            material.setAlphaValue_(.85 if mode.endswith("-clear") else 1)
             material.setHidden_(False)
         elif material is not None:
             material.setHidden_(True)
@@ -96,14 +96,14 @@ class MainNativeMaterialController(FloatNativeMaterialController):
                 self._dispose_vibrancy()
                 failure = None
                 kind = "opaque"
-                wants_glass = mode in ("liquid", "liquid-clear") and not reduced
+                wants_glass = is_liquid_glass_style(mode) and not reduced
                 _fix_webview_transparency(ns)
                 if wants_glass:
                     if supported:
                         try:
                             self._glass = MacLiquidGlass(ns)
                             style, tint = _style_from_settings(settings)
-                            self._glass.update(dark=True, radius=0, style=style, tint_opacity=tint)
+                            self._glass.update(dark=not is_light_appearance(mode), radius=0, style=style, tint_opacity=tint)
                             kind = "liquid-glass"
                         except Exception as exc:
                             failure = str(exc)

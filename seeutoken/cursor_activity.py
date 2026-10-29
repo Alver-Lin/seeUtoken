@@ -7,6 +7,8 @@ import re
 import subprocess
 from typing import Any
 
+from .process_utils import background_process_options
+
 _CURSOR_NAME = re.compile(r"cursor", re.I)
 # 单进程或 Helper 明显飙高时才视为「工作中」，避免 Cursor 前台空闲也转圈
 _CPU_MAX_BUSY = 14.0
@@ -17,7 +19,7 @@ _HELPER = re.compile(r"Cursor Helper", re.I)
 
 def _run(args: list[str], timeout: float = 1.2) -> str:
     try:
-        return subprocess.check_output(args, text=True, timeout=timeout).strip()
+        return subprocess.check_output(args, text=True, timeout=timeout, **background_process_options()).strip()
     except Exception:
         return ""
 
@@ -70,6 +72,8 @@ def _cursor_cpu_stats() -> tuple[float, float, float]:
 
 
 def probe_cursor_activity() -> dict[str, Any]:
+    if platform.system() == "Windows":
+        return _probe_windows_cursor()
     running = _cursor_processes_running()
     frontmost = _cursor_frontmost()
     total, peak, helper_peak = _cursor_cpu_stats()
@@ -90,3 +94,27 @@ def probe_cursor_activity() -> dict[str, Any]:
         "cpuHelperPeak": round(helper_peak, 1),
         "busy": busy,
     }
+
+
+def _probe_windows_cursor() -> dict[str, Any]:
+    import ctypes
+    from ctypes import wintypes
+    import psutil
+
+    processes = []
+    for process in psutil.process_iter(['name']):
+        try:
+            if (process.info.get('name') or '').lower() == 'cursor.exe':
+                processes.append((process.pid, process.cpu_percent(None)))
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    pid = wintypes.DWORD()
+    user = ctypes.windll.user32
+    user.GetForegroundWindow.restype = wintypes.HWND
+    user.GetWindowThreadProcessId.argtypes = (wintypes.HWND, ctypes.POINTER(wintypes.DWORD))
+    user.GetWindowThreadProcessId(user.GetForegroundWindow(), ctypes.byref(pid))
+    total = sum(cpu for _, cpu in processes)
+    peak = max((cpu for _, cpu in processes), default=0)
+    return {'ok': True, 'running': bool(processes), 'frontmost': any(p == pid.value for p, _ in processes),
+            'cpu': round(total, 1), 'cpuPeak': round(peak, 1), 'cpuHelperPeak': round(peak, 1),
+            'busy': peak >= _CPU_MAX_BUSY or total >= _CPU_TOTAL_BUSY}

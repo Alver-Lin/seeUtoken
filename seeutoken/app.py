@@ -21,7 +21,7 @@ from .float_native_material import FloatNativeMaterialController, _run_on_main, 
 from .main_native_material import MainNativeMaterialController
 from .float_pointer import FloatPointerController
 from .float_dock import FloatDockController
-from .storage import DEFAULT_PANELS, SettingsStore, normalize_float_glass_style
+from .storage import DEFAULT_PANELS, SettingsStore, is_light_appearance, normalize_float_glass_style
 from .resources import prepare_ui, resource_root
 
 ROOT = resource_root()
@@ -229,8 +229,8 @@ class SeeUtokenApp:
             f"window.__seeUtokenFloatSettings={settings};"
             f"window.__seeUtokenNativeMaterial={native};"
             f"document.documentElement.dataset.sutAppearance={json.dumps(mode)};"
-            f"document.documentElement.style.colorScheme={'light' if mode == 'light' else 'dark'!r};"
-            f"document.documentElement.style.backgroundColor={'#f5f7f9' if mode == 'light' else '#111824'!r};"
+            f"document.documentElement.style.colorScheme={'light' if is_light_appearance(mode) else 'dark'!r};"
+            f"document.documentElement.style.backgroundColor={'#f5f7f9' if is_light_appearance(mode) else '#111824'!r};"
         )
 
     def _show_prepared_float(self) -> None:
@@ -303,6 +303,7 @@ class SeeUtokenApp:
     @staticmethod
     def _float_settings_payload(settings: dict) -> dict:
         return {
+            "platform": sys.platform,
             "floatGlassStyle": normalize_float_glass_style(settings.get("floatGlassStyle")),
             "includeCachedTokens": bool(settings.get("includeCachedTokens", False)),
             "panels": [{"type": panel.get("type") or panel.get("provider") or "cursor"}
@@ -915,7 +916,7 @@ class SeeUtokenApp:
             width=1200,
             height=860,
             min_size=(900, 640),
-            background_color="#f5f7f9" if settings.get("floatGlassStyle") == "light" else "#111824",
+            background_color="#f5f7f9" if is_light_appearance(settings.get("floatGlassStyle")) else "#111824",
             transparent=sys.platform == "darwin",
             js_api=self.bridge,
             hidden=False,
@@ -932,7 +933,8 @@ class SeeUtokenApp:
             # 固定悬浮窗尺寸，禁止从透明边缘拉伸导致玻璃轮廓与点击区域错位。
             resizable=False,
             on_top=bool(settings.get("floatAlwaysOnTop", True)),
-            transparent=True,
+            transparent=sys.platform != "win32",
+            background_color="#f8fbff" if is_light_appearance(settings.get("floatGlassStyle")) else "#303438",
             easy_drag=False,
             js_api=self.float_bridge,
             hidden=True,
@@ -1075,9 +1077,14 @@ class SeeUtokenApp:
         self.float_win.events.closing += handle_float_closing
 
         gui = "edgechromium" if sys.platform == "win32" else None
+        options = {}
+        if sys.platform == "win32":
+            options["storage_path"] = str(self.store.path.parent / "webview2")
+            if (ASSETS / "icon.ico").is_file():
+                options["icon"] = str(ASSETS / "icon.ico")
         # private_mode=False 才能稳定读取登录 Cookie
         try:
-            webview.start(func=on_started, gui=gui, debug=False, private_mode=False)
+            webview.start(func=on_started, gui=gui, debug=False, private_mode=False, **options)
         finally:
             self._quit()
             if self._tray:

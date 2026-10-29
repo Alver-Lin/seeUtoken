@@ -23,7 +23,7 @@ seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的
 
 写代码时，用常驻侧边栏查看剩余额度；需要复盘时，打开详情大屏，查看每次提问的用量、年度活跃热力图和历史趋势。应用读取本机已有的登录状态与会话记录，结合提供方的账户接口获取数据，无需部署额外的服务端。
 
-当前重点适配 **macOS**，提供面向 **Apple Silicon、macOS 14 及以上**的 DMG 打包脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
+支持 **macOS 14+（Apple Silicon）**与 **Windows 10/11 x64**，分别提供 DMG 和单文件 EXE 的构建脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
 
 ## 支持的工具
 
@@ -59,7 +59,7 @@ seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的
 - **菜单栏与托盘控制**：打开主窗口、显示或隐藏侧边栏，以及退出应用。
 - **Mac 图标**：Dock 与应用图标采用层叠纸艺风格，保留白色底板，圆角曲线及留白与本机系统图标对齐；顶部菜单栏使用透明单色模板，自动适配深浅色背景。
 
-### 四种外观，统一切换
+### 六种外观，统一切换
 
 在首页设置中选择外观，模型额度首页、详情大屏、侧边栏与弹窗会同步更新：
 
@@ -67,10 +67,22 @@ seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的
 - **黑夜模式**：深色界面，适合夜间使用。
 - **Liquid Glass（标准）**：带有玻璃质感的半透明外观。
 - **Liquid Glass（通透）**：更通透的玻璃外观。
+- **Liquid Glass（白色标准）**：白色原生玻璃，搭配深色文字与柔和磨砂。
+- **Liquid Glass（白色通透）**：更轻透的白色原生玻璃，保留桌面背景与玻璃高光。
 
 macOS 主窗口会按系统能力使用原生 Liquid Glass 或 Vibrancy 兼容效果，标题栏随外观切换。系统开启「降低透明度」时，应用改用不透明背景。
 
 ## 快速开始
+
+### Windows EXE（V1.0.1）
+
+1. 使用 Windows 10/11 64 位系统，确保已安装 [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) 与 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。
+2. 双击 `seeUtoken-V1.0.1.exe` 运行，无需安装 Python 或 Node.js。
+3. 确保本机 Cursor 或 Codex 已登录，在首页查看额度与 Token 用量。
+
+Windows 版包含主页、两种工具详情、系统托盘、可拖动与置顶的侧边栏，以及六种外观。侧边栏按实际轮廓裁剪，不会用透明空白区域遮挡桌面；macOS 原生 Liquid Glass 与贴边自动缩进仍为 macOS 专属，Windows 使用对应的实体配色。设置、缓存、WebView2 登录数据和诊断日志均保存在 `%APPDATA%\seeUtoken\`。重复打开 EXE 会提示已运行，可从托盘恢复主窗口。
+
+Codex 默认识别 `PATH` 与 `%APPDATA%\npm` 中安装的原生程序或 npm 启动器，也可通过 `SEEU_CODEX_EXECUTABLE` 指定 `codex.exe` 的完整路径。Windows 与 WSL 是独立的数据环境；WSL 内部的登录与会话不会自动出现在 Windows 版本中。
 
 ### 安装 macOS DMG
 
@@ -241,6 +253,23 @@ bash packaging/macos/build.sh
 - `dist/seeUtoken-V1.0.0.dmg.sha256`
 
 默认使用 `.venv/bin/python` 与系统 `node`，可通过 `SEEU_BUILD_PYTHON` 和 `SEEU_BUILD_NODE` 指定工具路径。当前目标为 **arm64 / macOS 14+**，不提供 Intel Mac 安装包。
+
+### 打包 Windows EXE
+
+在 Windows x64 上安装 **Python 3.12 x64（带 py 启动器）**与 **Node.js 22+**，从项目根目录执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging/windows/build.ps1
+```
+
+脚本在项目的 `.venv-windows` 中安装依赖，运行测试、构建前端、生成多尺寸 ICO 图标，并以无控制台单文件模式输出：
+
+- `dist/seeUtoken-V1.0.1.exe`
+- `dist/seeUtoken-V1.0.1.exe.sha256`
+
+打包只包含应用资源，自动剔除页面内的本机账户、用量与设置快照。EXE 的文件版本和产品版本为 **1.0.1**；当前构建未做 Windows 代码签名。
+
+也可以运行 GitHub Actions 中的 **Build Windows EXE** 工作流。工作流在 Windows Server 2022 x64 上构建，并实际启动打包后的 WebView2 窗口、检查 JavaScript 与侧边栏原生裁剪后上传产物。PyInstaller 需要目标操作系统，不能直接在 macOS 上交叉生成 Windows EXE。
 
 ## 参与贡献
 
