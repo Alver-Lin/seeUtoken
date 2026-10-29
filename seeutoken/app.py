@@ -533,8 +533,10 @@ class SeeUtokenApp:
         def install() -> None:
             if not self._quitting:
                 from .mac_lifecycle import install_app_delegate
+                from .mac_icons import set_application_icon
 
                 self._app_delegate = install_app_delegate(self._show_main, self._quit)
+                set_application_icon(ASSETS / "icon.png")
 
         _run_on_main(install)
 
@@ -822,7 +824,9 @@ class SeeUtokenApp:
         except ImportError:
             return
 
-        icon_path = ASSETS / "tray.png"
+        icon_path = ASSETS / ("tray-template.png" if sys.platform == "darwin" else "tray.png")
+        if not icon_path.exists():
+            icon_path = ASSETS / "tray.png"
         if not icon_path.exists():
             icon_path = ASSETS / "icon.png"
         image = Image.open(icon_path) if icon_path.exists() else Image.new("RGB", (32, 32), (59, 130, 246))
@@ -849,11 +853,19 @@ class SeeUtokenApp:
         def start() -> None:
             if self._quitting:
                 return
-            self._tray = pystray.Icon("seeUtoken", image, "seeUtoken · Cursor 用量", menu)
+            self._tray = pystray.Icon("seeUtoken", image, "seeUtoken · 用量与额度", menu)
             if sys.platform == "darwin":
                 # Share pywebview's AppKit loop instead of starting another one.
                 def setup(icon):
-                    _run_on_main(lambda: setattr(icon, "visible", not self._quitting))
+                    def show():
+                        if self._quitting:
+                            return
+                        icon.visible = True
+                        from .mac_icons import set_status_icon
+
+                        set_status_icon(icon, icon_path)
+
+                    _run_on_main(show)
 
                 self._tray.run_detached(setup=setup)
             else:
