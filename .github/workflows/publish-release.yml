@@ -103,13 +103,14 @@ jobs:
           if reference is None:
               reference = api('git/refs', {'ref': 'refs/tags/' + tag, 'sha': source})
           assert reference['object']['type'] == 'commit' and reference['object']['sha'] == source, 'Existing tag points to a different commit'
-          release = api(f'releases/tags/{tag}', missing=True)
+          # Draft releases are discoverable through the list/ID endpoints.
+          release = next((r for r in api('releases?per_page=100') if r['tag_name'] == tag), None)
           if release is None:
-              subprocess.run(['gh', 'release', 'create', tag, '--verify-tag', '--draft', '--title', 'seeUtoken ' + tag, '--notes-file', str(notes)], check=True)
-              release = api(f'releases/tags/{tag}')
+              release = api('releases', {'tag_name': tag, 'target_commitish': source,
+                  'name': 'seeUtoken ' + tag, 'body': notes.read_text(), 'draft': True, 'prerelease': False})
           if release['draft']:
               subprocess.run(['gh', 'release', 'upload', tag, *map(str, files), '--clobber'], check=True)
-          release = api(f'releases/tags/{tag}')
+          release = api(f"releases/{release['id']}")
           assets = {asset['name']: asset for asset in release['assets']}
           assert set(assets) == {p.name for p in files}, 'Uploaded asset set is incomplete'
           for file in files:
