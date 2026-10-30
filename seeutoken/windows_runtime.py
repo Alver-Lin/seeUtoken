@@ -19,7 +19,7 @@ def smoke_test(report):
     import webview
     from . import __version__
     from .app import UI, ASSETS
-    from .windows_float import apply_sidebar
+    from .windows_float import apply_sidebar, hide_from_taskbar, taskbar_hidden
 
     report = Path(report)
     result = {'ok': False, 'version': __version__}
@@ -28,6 +28,7 @@ def smoke_test(report):
             raise RuntimeError(f'Missing bundled resource: {resource.name}')
     window = webview.create_window('seeUtoken build check', html='<html><body>Windows build check</body></html>',
                                    width=300, height=200, frameless=True, hidden=True)
+    window.events.before_show += hide_from_taskbar
 
     def loaded():
         def check():
@@ -39,7 +40,8 @@ def smoke_test(report):
                                  ['C', 220, 10, 220, 50, 200, 50], ['L', 10, 50], ['Z']],
                 })
                 result['windowRegion'] = window.native.Region is not None
-                result['ok'] = result['javascript'] == 42 and result['windowRegion']
+                result['sidebarTaskbarHidden'] = taskbar_hidden(window)
+                result['ok'] = result['javascript'] == 42 and result['windowRegion'] and result['sidebarTaskbarHidden']
             except Exception as exc:
                 result['error'] = str(exc)
             finally:

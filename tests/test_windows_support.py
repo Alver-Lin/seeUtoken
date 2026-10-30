@@ -1,4 +1,5 @@
 import json
+import ctypes
 from pathlib import Path
 import runpy
 import subprocess
@@ -12,7 +13,7 @@ from PIL import Image
 from seeutoken.codex_usage import codex_command
 from seeutoken.float_native_material import FloatNativeMaterialController
 from seeutoken.process_utils import background_process_options
-from seeutoken.windows_float import apply_sidebar, set_topmost
+from seeutoken.windows_float import apply_sidebar, set_topmost, _window_style
 
 
 class WindowsCodexTests(unittest.TestCase):
@@ -57,6 +58,30 @@ class WindowsCodexTests(unittest.TestCase):
 
 
 class WindowsSidebarTests(unittest.TestCase):
+    def test_taskbar_policy_preserves_layered_topmost_and_64_bit_handle(self):
+        handle = 0x100000001
+        original = 0x40000 | 0x80000 | 0x8
+        api = Mock()
+        api.GetWindowLongPtrW.return_value = original
+        api.SetWindowLongPtrW.return_value = original
+        api.SetWindowPos.return_value = 1
+        form = SimpleNamespace(Handle=SimpleNamespace(ToInt64=lambda: handle))
+        with patch.object(ctypes, 'WinDLL', return_value=api, create=True), \
+                patch.object(ctypes, 'set_last_error', create=True):
+            result = _window_style(form, hide=True)
+        self.assertEqual(result, 0x80000 | 0x8 | 0x80)
+        api.SetWindowLongPtrW.assert_called_once_with(handle, -20, result)
+        api.SetWindowPos.assert_called_once_with(handle, None, 0, 0, 0, 0, 0x37)
+
+    def test_taskbar_style_callback_does_not_trigger_recursive_updates(self):
+        api = Mock()
+        api.GetWindowLongPtrW.return_value = 0x80000 | 0x80
+        form = SimpleNamespace(Handle=SimpleNamespace(ToInt64=lambda: 123))
+        with patch.object(ctypes, 'WinDLL', return_value=api, create=True):
+            _window_style(form, hide=True)
+        api.SetWindowLongPtrW.assert_not_called()
+        api.SetWindowPos.assert_not_called()
+
     def test_topmost_runs_on_ui_thread_without_blocking_caller(self):
         form = Mock(InvokeRequired=True)
         window = SimpleNamespace(native=form, on_top=True)

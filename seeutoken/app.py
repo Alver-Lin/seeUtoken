@@ -945,6 +945,10 @@ class SeeUtokenApp:
             js_api=self.float_bridge,
             hidden=True,
         )
+        if sys.platform == "win32":
+            from .windows_float import hide_from_taskbar
+
+            self.float_win.events.before_show += hide_from_taskbar
         self.float_native.attach(self.float_win)
         self.main_native.attach(self.main_win)
 
