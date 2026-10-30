@@ -11,7 +11,7 @@
 ![macOS](https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-6366f1)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11%20x64-0078D4?logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/Windows-1.0.2-16a34a)
+![Version](https://img.shields.io/badge/version-1.0.1-16a34a)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
 
@@ -21,16 +21,16 @@
 
 ## 下载安装
 
-Windows 当前版本 **v1.0.2**，发布于 **2026 年 10 月 30 日**；macOS 安装包继续使用 **v1.0.1**。
+当前下载安装版本为 **v1.0.1**，发布于 **2026 年 10 月 29 日**，适用于 macOS 与 Windows。
 
 - **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.1.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg.sha256)
-- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.2.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.2/seeUtoken-V1.0.2.exe) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.2/seeUtoken-V1.0.2.exe.sha256)
+- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.1.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe.sha256)
 
 安装包已包含应用运行代码与前端，无需安装 Python 或 Node.js。Windows 运行环境与 macOS 首次打开方式见[快速开始](#快速开始)。
 
-**Windows v1.0.2 更新**：修复悬浮侧栏的大块背景、快速切换工具时的弹窗错位和残影，以及长任务运行转圈消失的问题；区分标准和通透外观。macOS 与 Windows 代码统一在 `main` 维护，日常开发使用 `dev`。
+**v1.0.1 更新**：新增 Windows 单文件 EXE、系统托盘与侧边栏轮廓裁剪；新增白色标准和白色通透两种 Liquid Glass 外观；统一 macOS 与 Windows 的应用版本和打包说明。
 
-[查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.2) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
+[查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.1) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
 
 ## seeUtoken 是什么？
 
@@ -89,10 +89,10 @@ macOS 主窗口会按系统能力使用原生 Liquid Glass 或 Vibrancy 兼容�
 
 ## 快速开始
 
-### Windows EXE（V1.0.2）
+### Windows EXE（V1.0.1）
 
 1. 使用 Windows 10/11 64 位系统，确保已安装 [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) 与 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。
-2. [下载 seeUtoken-V1.0.2.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.2/seeUtoken-V1.0.2.exe)，双击运行，无需安装 Python 或 Node.js。
+2. [下载 seeUtoken-V1.0.1.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe)，双击运行，无需安装 Python 或 Node.js。
 3. 确保本机 Cursor 或 Codex 已登录，在首页查看额度与 Token 用量。
 
 Windows 版包含主页、两种工具详情、系统托盘、可拖动与置顶的侧边栏，以及六种外观。侧边栏按实际轮廓裁剪，不会用透明空白区域遮挡桌面。Windows 11 22H2 及以上的主窗口玻璃外观使用原生 Desktop Acrylic：标准模式遮罩更厚，通透模式保留更多背景色彩。异形侧边栏独立控制窗口透明度，标准模式不透明、通透模式为 80%，保留胶囊与弹窗的裁剪。旧版 Windows 或主窗口材质不可用时，主窗口使用不透明配色；系统关闭透明效果时，所有窗口均恢复不透明。macOS 原生 Liquid Glass 与贴边自动缩进仍为 macOS 专属。设置、缓存、WebView2 登录数据和诊断日志均保存在 `%APPDATA%\seeUtoken\`。重复打开 EXE 会提示已运行，可从托盘恢复主窗口。
