@@ -1,0 +1,43 @@
+name: Build macOS installer
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: ['main', 'dev']
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements.txt
+          cd frontend
+          npm ci
+      - run: .venv/bin/python -m unittest discover -s tests
+      - run: bash packaging/macos/build.sh
+      - run: .venv/bin/python packaging/macos/test_upgrade.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seeUtoken-macos-arm64-installer
+          path: |
+            dist/seeUtoken-V*.dmg
+            dist/seeUtoken-V*.dmg.sha256
+            dist/seeUtoken-V*.pkg
+          if-no-files-found: error
+          retention-days: 30

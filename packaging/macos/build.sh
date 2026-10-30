@@ -12,4 +12,5 @@ fi
 "$SEEU_PYTHON" packaging/macos/prepare.py
 PYINSTALLER_CONFIG_DIR="$PROJECT_ROOT/build/macos/cache" PYTHONPATH="$TOOLS" \
   "$SEEU_PYTHON" -m PyInstaller --noconfirm --clean --distpath dist --workpath build/macos/pyinstaller packaging/macos/seeUtoken.spec
-bash packaging/macos/create_dmg.sh
+"$SEEU_PYTHON" packaging/macos/create_pkg.py
+SEEU_BUILD_PYTHON="$SEEU_PYTHON" bash packaging/macos/create_dmg.sh

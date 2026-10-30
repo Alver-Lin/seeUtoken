@@ -1,0 +1,123 @@
+name: Publish GitHub Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full commit SHA to release (must match the tested source tree)
+        required: true
+      windows_run_id:
+        description: Successful Windows build and upgrade-test run
+        required: true
+      macos_run_id:
+        description: Successful macOS build and upgrade-test run
+        required: true
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      SOURCE_SHA: ${{ inputs.source_sha }}
+      WINDOWS_RUN: ${{ inputs.windows_run_id }}
+      MACOS_RUN: ${{ inputs.macos_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+      - name: Verify successful builds match the release source
+        run: |
+          python3 - <<'PY'
+          import json, os, re, runpy, subprocess
+          repo, source = os.environ['GH_REPO'], os.environ['SOURCE_SHA']
+          assert re.fullmatch(r'[0-9a-f]{40}', source), 'A full source commit is required'
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{path}']))
+          tree = api(f'commits/{source}')['commit']['tree']['sha']
+          expected = [('WINDOWS_RUN', 'Build Windows EXE'), ('MACOS_RUN', 'Build macOS installer')]
+          for variable, name in expected:
+              run_id = os.environ[variable]
+              assert run_id.isdigit(), 'Invalid build run ID'
+              run = api(f'actions/runs/{run_id}')
+              assert run['name'] == name and run['status'] == 'completed' and run['conclusion'] == 'success'
+              assert run['head_repository']['full_name'] == repo, 'External build sources are not allowed'
+              assert api(f"commits/{run['head_sha']}")['commit']['tree']['sha'] == tree, 'Build source differs from release source'
+          version = runpy.run_path('packaging/metadata.py')['VERSION']
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'RELEASE_TAG=v{version}\n')
+          print(f'Both successful native builds match the release tree: {tree}')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: seeUtoken-windows-x64-installer
+          path: release-assets
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.windows_run_id }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: seeUtoken-macos-arm64-installer
+          path: release-assets
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.macos_run_id }}
+      - name: Verify assets, upload a complete draft, then publish as Latest
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          repo, source, tag = os.environ['GH_REPO'], os.environ['SOURCE_SHA'], os.environ['RELEASE_TAG']
+          prefix = 'seeUtoken-V' + tag.removeprefix('v')
+          folder = Path('release-assets')
+          expected = {prefix + suffix for suffix in ('.exe', '.exe.sha256', '.dmg', '.dmg.sha256', '.pkg')}
+          assert {p.name for p in folder.iterdir()} == expected, 'Unexpected or missing release assets'
+          for suffix in ('.exe', '.dmg'):
+              file = folder / (prefix + suffix)
+              digest, filename = file.with_name(file.name + '.sha256').read_text(encoding='utf-8-sig').split()
+              assert filename == file.name and hashlib.sha256(file.read_bytes()).hexdigest() == digest.lower(), 'Installer checksum mismatch'
+          pkg = folder / (prefix + '.pkg')
+          pkg.with_name(pkg.name + '.sha256').write_text(hashlib.sha256(pkg.read_bytes()).hexdigest() + '  ' + pkg.name + '\n')
+          files = sorted(folder.iterdir())
+          assert all(p.is_file() and not p.is_symlink() and p.stat().st_size > 0 for p in files)
+          notes = Path('packaging/release-notes') / (tag + '.md')
+          assert notes.is_file(), 'Release notes are required'
+          def api(path, payload=None, missing=False):
+              args = ['gh', 'api', f'repos/{repo}/{path}']
+              if payload is not None:
+                  args += ['--method', 'POST', '--input', '-']
+              result = subprocess.run(args, input=json.dumps(payload) if payload is not None else None, text=True, capture_output=True)
+              if result.returncode:
+                  if missing and '404' in result.stderr:
+                      return None
+                  raise RuntimeError(result.stderr)
+              return json.loads(result.stdout)
+          reference = api(f'git/ref/tags/{tag}', missing=True)
+          if reference is None:
+              reference = api('git/refs', {'ref': 'refs/tags/' + tag, 'sha': source})
+          assert reference['object']['type'] == 'commit' and reference['object']['sha'] == source, 'Existing tag points to a different commit'
+          release = api(f'releases/tags/{tag}', missing=True)
+          if release is None:
+              subprocess.run(['gh', 'release', 'create', tag, '--verify-tag', '--draft', '--title', 'seeUtoken ' + tag, '--notes-file', str(notes)], check=True)
+              release = api(f'releases/tags/{tag}')
+          if release['draft']:
+              subprocess.run(['gh', 'release', 'upload', tag, *map(str, files), '--clobber'], check=True)
+          release = api(f'releases/tags/{tag}')
+          assets = {asset['name']: asset for asset in release['assets']}
+          assert set(assets) == {p.name for p in files}, 'Uploaded asset set is incomplete'
+          for file in files:
+              asset = assets[file.name]
+              assert asset['state'] == 'uploaded' and asset['size'] == file.stat().st_size
+              assert asset.get('digest') == 'sha256:' + hashlib.sha256(file.read_bytes()).hexdigest(), 'Uploaded asset digest mismatch'
+          subprocess.run(['gh', 'release', 'edit', tag, '--draft=false', '--prerelease=false', '--latest'], check=True)
+          latest = api('releases/latest')
+          assert latest['tag_name'] == tag and not latest['draft'] and not latest['prerelease']
+          print(latest['html_url'])
+          PY

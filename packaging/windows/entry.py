@@ -1,9 +1,12 @@
-"""Entry point for the single-file Windows application."""
+"""Entry point for the installed Windows application and installer preflight."""
 from multiprocessing import freeze_support
 
 if __name__ == '__main__':
     freeze_support()
     import sys
+    if len(sys.argv) == 3 and sys.argv[1] == '--prepare-upgrade':
+        from seeutoken.windows_upgrade import main as prepare_upgrade
+        raise SystemExit(prepare_upgrade(sys.argv[2]))
     if len(sys.argv) == 3 and sys.argv[1] == '--smoke-test':
         try:
             from seeutoken.windows_runtime import smoke_test

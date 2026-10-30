@@ -40,7 +40,7 @@ seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的
 
 写代码时，用常驻侧边栏查看剩余额度；需要复盘时，打开详情大屏，查看每次提问的用量、年度活跃热力图和历史趋势。应用读取本机已有的登录状态与会话记录，结合提供方的账户接口获取数据，无需部署额外的服务端。
 
-支持 **macOS 14+（Apple Silicon）**与 **Windows 10/11 x64**，分别提供 DMG 和单文件 EXE 的构建脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
+支持 **macOS 14+（Apple Silicon）**与 **Windows 10/11 x64**，分别提供 DMG/PKG 与 EXE 安装器的构建脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
 
 ## 支持的工具
 
@@ -111,6 +111,14 @@ Codex 默认识别 `PATH` 与 `%APPDATA%\npm` 中安装的原生程序或 npm �
 4. 确保本机 Cursor 或 Codex 已登录，然后进入对应面板查看数据。
 
 当前 DMG 使用本地 ad-hoc 签名，尚未进行 Developer ID 签名及 Apple 公证。首次打开若被系统拦截，请按[安装说明](packaging/macos/INSTALL.txt)操作。
+
+### 覆盖升级（从 v1.0.2 安装器开始）
+
+上方下载入口仍保留已发布的 **v1.0.1 历史安装包**。下面描述的是当前源码构建的新安装器，不会改变旧安装包本身的行为。
+
+- **macOS**：打开新 DMG，双击「安装 seeUtoken.pkg」。安装器关闭旧版后，将 `/Applications/seeUtoken.app` 完整替换为新版；应用名和 Bundle ID 保持不变，也支持从拖拽安装的 v1.0.1 升级。同版本重新安装也会替换程序文件。
+- **Windows**：双击新 EXE，按安装向导完成安装。程序固定保存在 `%LOCALAPPDATA%\Programs\seeUtoken\seeUtoken.exe`，后续版本复用同一安装记录和开始菜单快捷方式。安装前会关闭当前用户正在运行的已识别旧版，包括 v1.0.1 便携 EXE；若旧版无法退出，安装会停止，保留原有程序。
+- **个人数据保留**：macOS 的 `~/.config/seeUtoken/` 和 Windows 的 `%APPDATA%\seeUtoken\` 均不会被升级或卸载清除。下载目录中的历史 DMG、EXE 安装文件及自行复制到其他目录的便携文件不会被扫描删除；从 v1.0.1 便携版迁移后，请使用开始菜单中的 seeUtoken。
 
 ### 从源码运行
 
@@ -269,27 +277,30 @@ bash packaging/macos/build.sh
 脚本会构建前端、准备资源、使用 PyInstaller 打包应用，并生成：
 
 - `dist/seeUtoken.app`
-- `dist/seeUtoken-V1.0.1.dmg`
-- `dist/seeUtoken-V1.0.1.dmg.sha256`
+- `dist/seeUtoken-V1.0.2.pkg`
+- `dist/seeUtoken-V1.0.2.dmg`（内含 PKG 安装器）
+- `dist/seeUtoken-V1.0.2.dmg.sha256`
 
 默认使用 `.venv/bin/python` 与系统 `node`，可通过 `SEEU_BUILD_PYTHON` 和 `SEEU_BUILD_NODE` 指定工具路径。当前目标为 **arm64 / macOS 14+**，不提供 Intel Mac 安装包。
 
 ### 打包 Windows EXE
 
-在 Windows x64 上安装 **Python 3.12 x64（带 py 启动器）**与 **Node.js 22+**，从项目根目录执行：
+在 Windows x64 上安装 **Python 3.12 x64（带 py 启动器）**、**Node.js 22+** 和 [Inno Setup 6](https://jrsoftware.org/isdl.php)，从项目根目录执行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File packaging/windows/build.ps1
 ```
 
-脚本在项目的 `.venv-windows` 中安装依赖，运行测试、构建前端、生成多尺寸 ICO 图标，并以无控制台单文件模式输出：
+脚本在项目的 `.venv-windows` 中安装依赖，运行测试、构建前端、生成多尺寸 ICO 图标，再将无控制台应用封装为支持覆盖升级的安装器：
 
 - `dist/seeUtoken-V1.0.2.exe`
 - `dist/seeUtoken-V1.0.2.exe.sha256`
 
 打包只包含应用资源，自动剔除页面内的本机账户、用量与设置快照。EXE 的文件版本和产品版本为 **1.0.2**；当前构建未做 Windows 代码签名。
 
-也可以运行 GitHub Actions 中的 **Build Windows EXE** 工作流。工作流在 Windows Server 2022 x64 上构建，并实际启动打包后的 WebView2 窗口、检查 JavaScript 与侧边栏原生裁剪后上传产物。PyInstaller 需要目标操作系统，不能直接在 macOS 上交叉生成 Windows EXE。
+两端安装器与应用版本统一读取 `seeutoken/__init__.py`。Windows 的应用载荷保存在 `build/windows/app/seeUtoken.exe`，分发时应使用 `dist/` 中的安装器。
+
+也可以运行 GitHub Actions 中的 **Build Windows EXE** 与 **Build macOS installer** 工作流。除 Windows WebView2 启动检查外，两端均在临时运行器上执行真实安装升级测试，验证运行中的 v1.0.1 被替换、同版本重装和个人数据保留。PyInstaller 需要目标操作系统，不能直接在 macOS 上交叉生成 Windows EXE。
 
 ## 参与贡献
 

@@ -1,7 +1,9 @@
 # Build from the repository root after preparing build/macos/ui and the .icns.
 from pathlib import Path
+import runpy
 
 ROOT = Path(SPECPATH).resolve().parents[1]
+META = runpy.run_path(str(ROOT / 'packaging' / 'metadata.py'))
 a = Analysis(
     [str(ROOT / 'packaging' / 'macos' / 'entry.py')],
     pathex=[str(ROOT)],
@@ -24,11 +26,11 @@ collection = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='see
 app = BUNDLE(
     collection, name='seeUtoken.app',
     icon=str(ROOT / 'build' / 'macos' / 'seeUtoken.icns'),
-    bundle_identifier='com.seeutoken.desktop', version='1.0.1',
+    bundle_identifier=META['APP_ID'], version=META['VERSION'],
     info_plist={
         'CFBundleDisplayName': 'seeUtoken',
-        'CFBundleShortVersionString': '1.0.1',
-        'CFBundleVersion': '1.0.1',
+        'CFBundleShortVersionString': META['VERSION'],
+        'CFBundleVersion': META['VERSION'],
         'LSMinimumSystemVersion': '14.0',
         'LSApplicationCategoryType': 'public.app-category.utilities',
         'NSHighResolutionCapable': True,
