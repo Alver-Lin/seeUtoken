@@ -19,6 +19,8 @@
 
 </div>
 
+![seeUtoken 展示预览：模型额度首页、Liquid Glass 外观与桌面侧边栏](docs/images/desktop-preview.png)
+
 ## 下载安装
 
 当前下载安装版本为 **v1.0.1**，发布于 **2026 年 10 月 29 日**，适用于 macOS 与 Windows。
