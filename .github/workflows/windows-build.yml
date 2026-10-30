@@ -1,9 +1,10 @@
 name: Build Windows EXE
 
 on:
+  pull_request:
   workflow_dispatch:
   push:
-    branches: ['main', 'dev']
+    branches: ['main', 'dev', 'codex/installer-upgrades']
     tags: ['v*']
 
 permissions:
@@ -36,11 +37,14 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'WebView2 runtime setup failed.' }
           & .venv-windows/Scripts/python.exe packaging/windows/smoke_test.py
           if ($LASTEXITCODE -ne 0) { throw 'Frozen application smoke test failed.' }
+      - name: Verify installer upgrades and preserves user data
+        shell: pwsh
+        run: .venv-windows/Scripts/python.exe packaging/windows/test_upgrade.py
       - uses: actions/upload-artifact@v4
         with:
-          name: seeUtoken-V1.0.2-windows-x64
+          name: seeUtoken-windows-x64-installer
           path: |
-            dist/seeUtoken-V1.0.2.exe
-            dist/seeUtoken-V1.0.2.exe.sha256
+            dist/seeUtoken-V*.exe
+            dist/seeUtoken-V*.exe.sha256
           if-no-files-found: error
           retention-days: 30

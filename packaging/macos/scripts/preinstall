@@ -1,0 +1,30 @@
+#!/bin/sh
+# Installer runs this before touching the existing bundle. Never delete user data.
+set -eu
+APP="${3%/}/Applications/seeUtoken.app"
+if [ -e "$APP" ]; then
+    ID=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist" 2>/dev/null || true)
+    if [ "$ID" != 'com.seeutoken.desktop' ]; then
+        echo "Refusing to replace an unrelated application at $APP" >&2
+        exit 1
+    fi
+fi
+running_pids() {
+    /bin/ps -ww -axo pid=,comm= | /usr/bin/awk -v executable="$APP/Contents/MacOS/seeUtoken" '
+        { pid=$1; sub(/^[[:space:]]*[0-9]+[[:space:]]+/, ""); if ($0 == executable) print pid }
+    '
+}
+PIDS=$(running_pids)
+if [ -n "$PIDS" ]; then
+    # Only signal the executable in the validated installation bundle.
+    for PID in $PIDS; do /bin/kill -TERM "$PID" 2>/dev/null || true; done
+    ATTEMPT=0
+    while [ -n "$(running_pids)" ]; do
+        if [ "$ATTEMPT" -ge 20 ]; then
+            echo 'Please quit seeUtoken before upgrading. The old application has not been replaced.' >&2
+            exit 1
+        fi
+        /bin/sleep 1
+        ATTEMPT=$((ATTEMPT + 1))
+    done
+fi

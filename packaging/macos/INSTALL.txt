@@ -1,20 +1,25 @@
-seeUtoken 1.0.1
+seeUtoken 安装与升级
 
 系统要求：Apple Silicon（M1 / M2 / M3 / M4 等 M 系列芯片），macOS 14 或更高版本。
 本安装包不适用于 Intel Mac。
 
 安装
-1. 将 seeUtoken.app 拖到 Applications 文件夹。
+1. v1.0.2 及以后：打开 DMG，双击「安装 seeUtoken.pkg」，按安装器提示完成安装。
+   安装器会关闭已安装的旧版，并完整替换 /Applications/seeUtoken.app。
+   首次安装、从 v1.0.1 升级，以及同版本重新安装都使用这一个位置，不会按版本另建应用。
+   v1.0.1 的历史 DMG 仍使用拖拽安装：将 seeUtoken.app 拖到 Applications，同名时选择「替换」。
 2. 在「应用程序」中打开 seeUtoken。
 3. 不需要另行安装 Python、Node.js 或其他开发环境。
 
 首次使用默认配置
 Token 统计不包含缓存；白天模式；显示侧边用量栏；开启贴边自动缩进；开启始终置顶。
 以后启动会保留你自己保存的配置。
+升级只替换程序；~/.config/seeUtoken/ 中的设置和用量缓存会保留。
+下载目录中的旧 DMG 是安装文件，可在安装成功后自行删除。
 账号信息、用量记录和个人设置不包含在安装包内，运行时从当前 Mac 读取。
 
 签名说明
-此版本仅有本地 ad-hoc 签名，未使用 Apple Developer ID 签名，也未经过 Apple 公证。
+应用目前仅有本地 ad-hoc 签名，安装器未使用 Developer ID Installer 签名，也未经过 Apple 公证。
 如果 macOS 因无法验证开发者而阻止打开，请先确认文件来自你信任的发送者，
 然后在「系统设置」>「隐私与安全性」中找到本次拦截记录，选择「仍要打开」。
 无需关闭系统的 Gatekeeper 安全保护。

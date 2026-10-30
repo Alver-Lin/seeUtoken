@@ -16,6 +16,8 @@ try {
         & $Python -m pip install -r packaging/windows/requirements-build.txt
         if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
     }
+    $Version = (& $Python packaging/metadata.py).Trim()
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to read application version.' }
     if (-not $SkipFrontend) {
         Push-Location frontend
         try {
@@ -29,10 +31,15 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Python tests failed.' }
     & $Python packaging/windows/prepare.py
     if ($LASTEXITCODE -ne 0) { throw 'Resource preparation failed.' }
-    & $Python -m PyInstaller --noconfirm --clean --distpath dist --workpath build/windows/pyinstaller packaging/windows/seeUtoken.spec
+    & $Python -m PyInstaller --noconfirm --clean --distpath build/windows/app --workpath build/windows/pyinstaller packaging/windows/seeUtoken.spec
     if ($LASTEXITCODE -ne 0) { throw 'EXE build failed.' }
-    $Artifact = Join-Path $ProjectRoot 'dist\seeUtoken-V1.0.2.exe'
+    $Compiler = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+    $Iscc = if ($Compiler) { $Compiler.Source } else { Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe' }
+    if (-not (Test-Path $Iscc)) { throw 'Install Inno Setup 6 (https://jrsoftware.org/isdl.php) to build the upgrade installer.' }
+    & $Iscc "/DAppVersion=$Version" "/DAppBinary=$ProjectRoot\build\windows\app\seeUtoken.exe" "/DOutputPath=$ProjectRoot\dist" "/DIconFile=$ProjectRoot\build\windows\assets\icon.ico" packaging/windows/installer.iss
+    if ($LASTEXITCODE -ne 0) { throw 'Installer build failed.' }
+    $Artifact = Join-Path $ProjectRoot "dist\seeUtoken-V$Version.exe"
     $Hash = (Get-FileHash $Artifact -Algorithm SHA256).Hash.ToLowerInvariant()
-    "$Hash  seeUtoken-V1.0.2.exe" | Set-Content "$Artifact.sha256" -Encoding ascii
+    "$Hash  seeUtoken-V$Version.exe" | Set-Content "$Artifact.sha256" -Encoding ascii
     Write-Host "Built: $Artifact"
 } finally { Pop-Location }

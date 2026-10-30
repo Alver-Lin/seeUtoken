@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+# Register only the final installed app, never a DMG/build staging copy.
+if [ "$3" = '/' ]; then
+    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+        -f /Applications/seeUtoken.app || true
+fi
