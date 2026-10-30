@@ -3,8 +3,8 @@ name: Build Windows EXE
 on:
   workflow_dispatch:
   push:
-    branches: ['seeUtoken-win']
-    tags: ['v1.0.2']
+    branches: ['main', 'dev']
+    tags: ['v*']
 
 permissions:
   contents: read

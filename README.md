@@ -28,7 +28,7 @@ Windows 当前版本 **v1.0.2**，发布于 **2026 年 10 月 30 日**；macOS �
 
 安装包已包含应用运行代码与前端，无需安装 Python 或 Node.js。Windows 运行环境与 macOS 首次打开方式见[快速开始](#快速开始)。
 
-**Windows v1.0.2 更新**：修复悬浮侧栏的大块背景、快速切换工具时的弹窗错位和残影，以及长任务运行转圈消失的问题；区分标准和通透外观。Windows 开发分支为 `seeUtoken-win`。
+**Windows v1.0.2 更新**：修复悬浮侧栏的大块背景、快速切换工具时的弹窗错位和残影，以及长任务运行转圈消失的问题；区分标准和通透外观。macOS 与 Windows 代码统一在 `main` 维护，日常开发使用 `dev`。
 
 [查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.2) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
 
@@ -223,6 +223,8 @@ Cursor 需要能够匹配到本机会话历史与项目目录，Codex 需要记�
 效果取决于 macOS 版本、原生材质支持和辅助功能设置。较旧系统会回退到 Vibrancy；开启「降低透明度」时会使用不透明背景。
 
 ## 开发与构建
+
+`main` 是 macOS 与 Windows 共用的稳定分支，`dev` 是日常开发分支。两端通过平台判断使用各自的原生实现，从同一代码库分别构建 DMG 和 EXE。功能在 `dev` 完成验证后合入 `main`，再创建版本标签发布。
 
 ### 目录结构
 
