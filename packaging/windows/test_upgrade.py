@@ -6,11 +6,14 @@ from pathlib import Path
 import runpy
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import winreg
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+from seeutoken.windows_upgrade import executable_identity
 VERSION = runpy.run_path(str(ROOT / 'packaging' / 'metadata.py'))['VERSION']
 UNINSTALL_KEY = r'Software\Microsoft\Windows\CurrentVersion\Uninstall\com.seeutoken.desktop_is1'
 
@@ -51,6 +54,7 @@ using System.Threading;
 using System.Windows.Forms;
 [assembly: AssemblyProduct("seeUtoken")]
 [assembly: AssemblyDescription("seeUtoken AI usage monitor")]
+[assembly: AssemblyTitle("seeUtoken AI usage monitor")]
 [assembly: AssemblyFileVersion("1.0.1.0")]
 class Legacy {
   [STAThread] static void Main(string[] args) {
@@ -65,13 +69,22 @@ class Legacy {
         binary = target / 'seeUtoken.exe'
         subprocess.run([str(compiler), '/nologo', '/target:winexe', '/platform:x64',
                         '/reference:System.Windows.Forms.dll', '/out:' + str(binary), str(source)], check=True)
+        assert executable_identity(binary) == {
+            'ProductName': 'seeUtoken', 'FileDescription': 'seeUtoken AI usage monitor',
+        }, 'Legacy fixture must have the same version resources as v1.0.1'
         legacy = target / 'seeUtoken-V1.0.1.exe'
         shutil.copyfile(binary, legacy)
         processes = []
         def install():
-            subprocess.run([str(installer), '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART',
-                            '/DIR=' + str(target), '/LOG=' + str(folder / 'installer.log')],
-                           check=True, timeout=180, env=env)
+            log = folder / 'installer.log'
+            try:
+                subprocess.run([str(installer), '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART',
+                                '/DIR=' + str(target), '/LOG=' + str(log)],
+                               check=True, timeout=180, env=env)
+            except Exception:
+                if log.exists():
+                    print(log.read_text(encoding='utf-8-sig', errors='replace'), flush=True)
+                raise
             assert hashlib.sha256(binary.read_bytes()).digest() == expected_hash
             assert (settings.read_bytes(), cache.read_bytes()) == before
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, UNINSTALL_KEY) as key:

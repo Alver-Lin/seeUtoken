@@ -61,6 +61,7 @@ Filename: "{app}\seeUtoken.exe"; Description: "Launch seeUtoken"; Flags: nowait 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ExitCode: Integer;
+  Report: AnsiString;
 begin
   Result := '';
   ExtractTemporaryFile('seeUtoken-upgrade.exe');
@@ -70,6 +71,7 @@ begin
     Result := 'Unable to prepare the upgrade. The existing installation has not been changed.'
   else if (ExitCode <> 0) or CheckForMutexes('Local\seeUtoken.Desktop') then
     Result := 'Please quit seeUtoken, then retry. The existing installation has not been changed.';
+  if LoadStringFromFile(ExpandConstant('{tmp}\upgrade.json'), Report) then Log(String(Report));
 end;
 
 function InitializeUninstall: Boolean;
