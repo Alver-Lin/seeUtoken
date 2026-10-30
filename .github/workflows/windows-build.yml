@@ -3,8 +3,8 @@ name: Build Windows EXE
 on:
   workflow_dispatch:
   push:
-    branches: ['codex/windows-v1.0.1']
-    tags: ['v1.0.1']
+    branches: ['seeUtoken-win']
+    tags: ['v1.0.2']
 
 permissions:
   contents: read
@@ -38,9 +38,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Frozen application smoke test failed.' }
       - uses: actions/upload-artifact@v4
         with:
-          name: seeUtoken-V1.0.1-windows-x64
+          name: seeUtoken-V1.0.2-windows-x64
           path: |
-            dist/seeUtoken-V1.0.1.exe
-            dist/seeUtoken-V1.0.1.exe.sha256
+            dist/seeUtoken-V1.0.2.exe
+            dist/seeUtoken-V1.0.2.exe.sha256
           if-no-files-found: error
           retention-days: 30

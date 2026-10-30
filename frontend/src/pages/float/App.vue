@@ -214,6 +214,7 @@ const donutTrack = computed(() => isLightAppearance(floatGlassStyle.value) ? 'rg
 const nativeMaterialTick = ref(0);
 let floatGlassSyncTimer = null;
 const popCardRef = ref(null);
+const popAnchorRef = ref(null);
 const railRef = ref(null);
 const itemRefs = ref({});
 const popTailTop = ref(48);
@@ -583,10 +584,16 @@ function updatePopTail() {
   const itemRect = ringEl.getBoundingClientRect();
   const popRect = pop.getBoundingClientRect();
   const centerY = itemRect.top + itemRect.height / 2;
+  const dockRect = popAnchorRef.value?.parentElement?.getBoundingClientRect();
+  // On Windows, Vue may have updated the offset ref before the DOM has painted
+  // it. Derive the flex baseline without subtracting a reactive offset from DOM.
+  const baseTop = bootstrapSettings?.platform === 'win32' && dockRect
+    ? dockRect.top + (dockRect.height - popRect.height) / 2
+    : popRect.top - popOffsetY.value;
   const placement = popupPlacement({
     centerY,
     popupHeight: popRect.height,
-    baseTop: popRect.top - popOffsetY.value,
+    baseTop,
     viewportHeight: window.innerHeight,
     radius: parseFloat(getComputedStyle(pop).borderRadius) || 36,
   });

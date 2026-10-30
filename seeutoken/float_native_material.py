@@ -214,7 +214,7 @@ class FloatNativeMaterialController:
                 from .windows_float import apply_sidebar
 
                 self._state["type"] = "opaque"
-                apply_sidebar(self._win, mode, self._shape)
+                self._state.update(apply_sidebar(self._win, mode, self._shape) or {})
             self._synced = True
             if on_complete:
                 on_complete()

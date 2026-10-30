@@ -1,7 +1,9 @@
 import json
+import os
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from seeutoken.codex_activity import CodexActivity
@@ -14,6 +16,7 @@ class CodexActivityTests(unittest.TestCase):
         self.path = self.root / 'sessions' / 'one.jsonl'
         self.path.parent.mkdir()
         self.probe = CodexActivity(self.root)
+        self.probe._live_checked = time.monotonic()
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -73,6 +76,34 @@ class CodexActivityTests(unittest.TestCase):
         self.assertEqual(self.probe.probe()['activeTasks'], 1)
         self.append('task_complete')
         self.assertFalse(self.probe.probe()['busy'])
+
+    def test_windows_buffered_long_turn_stays_busy_while_codex_has_the_rollout_open(self):
+        self.append('task_started')
+        old = time.time() - 3600
+        os.utime(self.path, (old, old))
+        self.probe._live_files = {self.path}
+        with patch('seeutoken.codex_activity.sys.platform', 'win32'):
+            self.assertTrue(self.probe.probe()['busy'])
+            self.append('task_complete')
+            self.assertFalse(self.probe.probe()['busy'])
+
+    def test_windows_closed_process_does_not_keep_orphaned_rollout_busy(self):
+        self.append('task_started')
+        old = time.time() - 3600
+        os.utime(self.path, (old, old))
+        self.probe._live_files = {self.path}
+        with patch('seeutoken.codex_activity.sys.platform', 'win32'):
+            self.assertTrue(self.probe.probe()['busy'])
+            self.probe._live_files = set()
+            self.assertFalse(self.probe.probe()['busy'])
+
+    def test_macos_keeps_its_existing_stale_log_behavior(self):
+        self.append('task_started')
+        old = time.time() - 3600
+        os.utime(self.path, (old, old))
+        self.probe._live_files = {self.path}
+        with patch('seeutoken.codex_activity.sys.platform', 'darwin'):
+            self.assertFalse(self.probe.probe()['busy'])
 
 
 if __name__ == '__main__':

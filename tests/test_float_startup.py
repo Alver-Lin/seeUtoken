@@ -172,7 +172,8 @@ class FloatWindowStartupTests(unittest.TestCase):
         app.float_dock.sync.assert_called_once_with(settings)
         self.assertEqual(app.float_native.sync.call_args.args[0], settings)
 
-    def test_panel_changes_push_only_float_settings_and_hide_empty_rail(self):
+    @patch('seeutoken.windows_float.set_topmost')
+    def test_panel_changes_push_only_float_settings_and_hide_empty_rail(self, _topmost):
         app = self.app()
         app._float_ready = True
         settings = {'showFloat': True, 'panels': [{'type': 'codex'}, {'type': 'cursor'}],
@@ -203,13 +204,20 @@ class FloatWindowStartupTests(unittest.TestCase):
             store.save({'panels': []})
             self.assertEqual(SettingsStore().get()['panels'], [])
 
-    def test_other_platforms_use_pywebview_topmost_setting(self):
+    def test_windows_queues_topmost_on_the_ui_thread(self):
         app = self.app()
-        with patch('seeutoken.app.sys.platform', 'win32'):
+        with patch('seeutoken.app.sys.platform', 'win32'), \
+                patch('seeutoken.windows_float.set_topmost') as topmost:
             app._sync_float_native_material({'floatAlwaysOnTop': False})
-            self.assertFalse(app.float_win.on_top)
+            topmost.assert_called_with(app.float_win, False)
             app._sync_float_native_material({'floatAlwaysOnTop': True})
-            self.assertTrue(app.float_win.on_top)
+            topmost.assert_called_with(app.float_win, True)
+
+    def test_linux_uses_pywebview_topmost_setting(self):
+        app = self.app()
+        with patch('seeutoken.app.sys.platform', 'linux'):
+            app._sync_float_native_material({'floatAlwaysOnTop': False})
+        self.assertFalse(app.float_win.on_top)
 
     def test_bootstrap_contains_saved_appearance_before_module(self):
         for mode in ("light", "dark", "liquid", "liquid-clear", "liquid-light", "liquid-light-clear"):

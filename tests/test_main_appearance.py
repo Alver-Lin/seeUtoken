@@ -82,8 +82,17 @@ class MainMaterialTests(unittest.TestCase):
         self.mocks[4].assert_called_with(self.ns, 'liquid', False)
 
     def test_other_platforms_finish_with_opaque_css(self):
-        with patch('seeutoken.main_native_material.sys.platform', 'win32'):
+        with patch('seeutoken.main_native_material.sys.platform', 'linux'):
             self.assertEqual(self.sync('dark')['type'], 'opaque')
+        self.mocks[-1].assert_not_called()
+
+    def test_windows_uses_its_own_material_without_appkit(self):
+        with patch('seeutoken.main_native_material.sys.platform', 'win32'), \
+                patch('seeutoken.windows_material.sync_material', return_value={
+                    'platform': 'win32', 'type': 'windows-acrylic', 'floatStyle': 'liquid-clear'
+                }) as material:
+            self.assertEqual(self.sync('liquid-clear')['type'], 'windows-acrylic')
+        material.assert_called_once_with(self.controller._win, 'liquid-clear')
         self.mocks[-1].assert_not_called()
 
     def test_white_modes_keep_light_appearance_when_native_glass_is_unavailable(self):

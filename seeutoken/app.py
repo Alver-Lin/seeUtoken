@@ -189,7 +189,11 @@ class SeeUtokenApp:
         except Exception:
             pass  # The bootstrap and periodic settings read also reconcile the list.
         self.float_dock.sync(s)
-        if sys.platform != "darwin":
+        if sys.platform == "win32":
+            from .windows_float import set_topmost
+
+            set_topmost(self.float_win, bool(s.get("floatAlwaysOnTop", True)))
+        elif sys.platform != "darwin":
             self.float_win.on_top = bool(s.get("floatAlwaysOnTop", True))
 
         def push(win, js: str) -> None:
@@ -930,6 +934,8 @@ class SeeUtokenApp:
             x=int(fx),
             y=int(fy),
             frameless=True,
+            # DWM's rectangular frame/shadow must not surround the shaped rail.
+            shadow=sys.platform != "win32",
             # 固定悬浮窗尺寸，禁止从透明边缘拉伸导致玻璃轮廓与点击区域错位。
             resizable=False,
             on_top=bool(settings.get("floatAlwaysOnTop", True)),

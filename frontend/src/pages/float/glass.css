@@ -254,3 +254,36 @@ html.native-high-contrast .root {
 .root .pop-muted .pop-tail::after {
   border-left-color: var(--float-tail-fill);
 }
+
+/* Windows shaped windows use layered transparency, retaining the native clip. */
+html.native-windows-glass .root[data-glass='liquid'] {
+  --windows-tint: rgba(23, 32, 47, .76);
+  --windows-line: rgba(222, 237, 255, .22);
+}
+html.native-windows-glass .root[data-glass='liquid-clear'] {
+  --windows-tint: rgba(15, 24, 39, .22);
+  --windows-line: rgba(230, 242, 255, .42);
+}
+html.native-windows-glass .root[data-glass='liquid-light'] {
+  --windows-tint: rgba(248, 251, 255, .82);
+  --windows-line: rgba(115, 141, 175, .26);
+}
+html.native-windows-glass .root[data-glass='liquid-light-clear'] {
+  --windows-tint: rgba(248, 251, 255, .24);
+  --windows-line: rgba(255, 255, 255, .8);
+}
+html.native-windows-glass .root[data-glass^='liquid'] {
+  --float-tail-fill: var(--windows-tint);
+  --float-tail-stroke: var(--windows-line);
+}
+html.native-windows-glass .root[data-glass^='liquid'] .glass-surface {
+  background: var(--windows-tint);
+  border: 1px solid var(--windows-line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .34);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.native-windows-glass .root .glass-surface::before,
+html.native-windows-glass .root .glass-surface::after {
+  display: none;
+}

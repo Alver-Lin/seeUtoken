@@ -3,7 +3,20 @@ from __future__ import annotations
 
 import logging
 
-from .storage import is_light_appearance
+def set_topmost(window, enabled):
+    """WinForms TopMost must be changed on its owning UI thread."""
+    form = getattr(window, 'native', None)
+    if form is None:
+        return
+    from System import Action
+
+    def update():
+        window.on_top = bool(enabled)
+
+    if form.InvokeRequired:
+        form.BeginInvoke(Action(update))
+    else:
+        update()
 
 
 def build_path(commands, path, point):
@@ -34,14 +47,16 @@ def apply_sidebar(window, mode, shape=None):
         return
     from System import Action
 
+    state = {}
+
     def update():
-        from System.Drawing import Color, PointF, Region
+        from System.Drawing import PointF, Region
         from System.Drawing.Drawing2D import FillMode, GraphicsPath, Matrix
 
         try:
-            color = Color.FromArgb(248, 251, 255) if is_light_appearance(mode) else Color.FromArgb(48, 52, 56)
-            form.BackColor = color
-            form.webview.DefaultBackgroundColor = color
+            from .windows_material import apply_material
+
+            state.update(apply_material(form, mode, shaped=True))
             if not shape or not shape.get('commands'):
                 return
             width, height = float(shape.get('width') or 0), float(shape.get('height') or 0)
@@ -58,6 +73,9 @@ def apply_sidebar(window, mode, shape=None):
                 form.Region = Region(path)
                 if previous is not None:
                     previous.Dispose()
+                # Layered windows otherwise retain pixels from the previous
+                # provider until an unrelated mouse/paint event invalidates them.
+                form.Refresh()
             finally:
                 matrix.Dispose()
                 path.Dispose()
@@ -68,3 +86,4 @@ def apply_sidebar(window, mode, shape=None):
         form.Invoke(Action(update))
     else:
         update()
+    return state

@@ -16,7 +16,7 @@ a = Analysis(
 pyz = PYZ(a.pure)
 exe = EXE(
     pyz, a.scripts, a.binaries, a.datas, [],
-    name='seeUtoken-V1.0.1',
+    name='seeUtoken-V1.0.2',
     debug=False, strip=False, upx=False, console=False,
     icon=str(BUILD / 'assets' / 'icon.ico'),
     version=str(ROOT / 'packaging' / 'windows' / 'version_info.txt'),

@@ -7,6 +7,7 @@
  */
 import { nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { seeUtoken } from '../../bridge';
+import { createShapeSender } from './shapeSender';
 
 // 四分之一圆角到三次贝塞尔控制点的最佳近似比例（token-monitor ARC）
 const ARC = 0.448;
@@ -64,6 +65,9 @@ export function useNativeGlassShape({ railRef, popRef, hoveredId, popTailTop, po
   let timer = null;
   let ro = null;
   let lastKey = '';
+  let generation = 0;
+  const windows = window.__seeUtokenFloatSettings?.platform === 'win32';
+  const sender = windows ? createShapeSender((payload) => seeUtoken.setFloatGlassShape(payload)) : null;
 
   const send = () => {
     const collapsed = !!dockState?.value?.collapsed && !dockState?.value?.nativeHandle;
@@ -107,6 +111,10 @@ export function useNativeGlassShape({ railRef, popRef, hoveredId, popTailTop, po
       railRect: toRect(rail),
       hitRects,
     };
+    if (sender) {
+      sender.push(payload);
+      return;
+    }
     const key = JSON.stringify(payload);
     if (key === lastKey) return;
     lastKey = key;
@@ -114,10 +122,20 @@ export function useNativeGlassShape({ railRef, popRef, hoveredId, popTailTop, po
   };
 
   const schedule = () => {
-    nextTick(send);
+    const current = ++generation;
+    if (windows) {
+      // Provider content, placement and native clipping must use the same layout.
+      nextTick(() => nextTick(() => {
+        if (current === generation) send();
+      }));
+    } else {
+      nextTick(send);
+    }
     if (timer) window.clearTimeout(timer);
     // 等 0.14s 弹窗展开动画结束后再校正一次最终几何
-    timer = window.setTimeout(send, 200);
+    timer = window.setTimeout(() => {
+      if (current === generation) send();
+    }, 200);
   };
 
   onMounted(() => {
@@ -130,6 +148,8 @@ export function useNativeGlassShape({ railRef, popRef, hoveredId, popTailTop, po
   watch([hoveredId, popTailTop, popOffsetY, glassStyle, nativeMaterialTick, dockState], schedule);
 
   onUnmounted(() => {
+    generation += 1;
+    sender?.dispose();
     if (ro) ro.disconnect();
     window.removeEventListener('resize', schedule);
     if (timer) window.clearTimeout(timer);

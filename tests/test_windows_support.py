@@ -12,7 +12,7 @@ from PIL import Image
 from seeutoken.codex_usage import codex_command
 from seeutoken.float_native_material import FloatNativeMaterialController
 from seeutoken.process_utils import background_process_options
-from seeutoken.windows_float import apply_sidebar
+from seeutoken.windows_float import apply_sidebar, set_topmost
 
 
 class WindowsCodexTests(unittest.TestCase):
@@ -57,11 +57,21 @@ class WindowsCodexTests(unittest.TestCase):
 
 
 class WindowsSidebarTests(unittest.TestCase):
+    def test_topmost_runs_on_ui_thread_without_blocking_caller(self):
+        form = Mock(InvokeRequired=True)
+        window = SimpleNamespace(native=form, on_top=True)
+        with patch.dict(sys.modules, {'System': SimpleNamespace(Action=lambda fn: fn)}):
+            set_topmost(window, False)
+        self.assertTrue(window.on_top)
+        form.Invoke.assert_not_called()
+        form.BeginInvoke.call_args.args[0]()
+        self.assertFalse(window.on_top)
+
     def test_outline_scales_with_dpi_and_disposes_previous_region(self):
         path, matrix, previous = Mock(), Mock(), Mock()
         region = Mock(return_value='new-region')
         form = SimpleNamespace(InvokeRequired=False, webview=SimpleNamespace(),
-                               ClientSize=SimpleNamespace(Width=600, Height=400), Region=previous)
+                               ClientSize=SimpleNamespace(Width=600, Height=400), Region=previous, Refresh=Mock())
         modules = {
             'System': SimpleNamespace(Action=lambda fn: fn),
             'System.Drawing': SimpleNamespace(Color=SimpleNamespace(FromArgb=lambda *rgb: rgb),
@@ -71,14 +81,16 @@ class WindowsSidebarTests(unittest.TestCase):
         }
         shape = {'width': 300, 'height': 200,
                  'commands': [['M', 10, 10], ['L', 40, 10], ['C', 50, 10, 50, 30, 40, 30], ['Z']]}
-        with patch.dict(sys.modules, modules):
+        with patch.dict(sys.modules, modules), \
+                patch('seeutoken.windows_material.apply_material', return_value={'type': 'windows-acrylic'}) as material:
             apply_sidebar(SimpleNamespace(native=form), 'liquid-light-clear', shape)
         matrix.Scale.assert_called_once_with(2, 2)
         path.AddLine.assert_called_once_with((10, 10), (40, 10))
         path.AddBezier.assert_called_once_with((40, 10), (50, 10), (50, 30), (40, 30))
         self.assertEqual(form.Region, 'new-region')
-        self.assertEqual(form.webview.DefaultBackgroundColor, (248, 251, 255))
+        material.assert_called_once_with(form, 'liquid-light-clear', shaped=True)
         previous.Dispose.assert_called_once()
+        form.Refresh.assert_called_once()
         path.Dispose.assert_called_once()
 
     def test_windows_waits_for_outline_before_revealing_opaque_sidebar(self):
@@ -86,9 +98,12 @@ class WindowsSidebarTests(unittest.TestCase):
         controller = FloatNativeMaterialController(on_ready=ready)
         window = Mock()
         controller.attach(window)
-        with patch('seeutoken.float_native_material.sys.platform', 'win32'), patch('seeutoken.windows_float.apply_sidebar') as apply:
+        with patch('seeutoken.float_native_material.sys.platform', 'win32'), \
+                patch('seeutoken.windows_float.apply_sidebar', return_value={
+                    'platform': 'win32', 'type': 'windows-acrylic'
+                }) as apply:
             controller.sync({'floatGlassStyle': 'liquid-light-clear'})
-            self.assertEqual(controller.get_state()['type'], 'opaque')
+            self.assertEqual(controller.get_state()['type'], 'windows-acrylic')
             ready.assert_not_called()
             controller.update_shape({'width': 400, 'height': 400, 'commands': [['M', 0, 0], ['L', 66, 0], ['Z']]})
             self.assertEqual(apply.call_args.args[0:2], (window, 'liquid-light-clear'))

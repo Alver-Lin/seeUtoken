@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -17,16 +18,48 @@ class CodexActivity:
         self.home = home or Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
         self._files: dict = {}
         self._lock = threading.Lock()
+        self._live_files: set[Path] = set()
+        self._live_checked = 0.0
+        self._live_running = False
+
+    def _refresh_live_files(self):
+        """Windows rollouts may stay buffered during a long-running turn."""
+        live = set()
+        try:
+            import psutil
+
+            for process in psutil.process_iter(['name']):
+                if (process.info.get('name') or '').lower() != 'codex.exe':
+                    continue
+                try:
+                    for opened in process.open_files():
+                        path = Path(opened.path)
+                        if path.suffix == '.jsonl' and path.is_relative_to(self.home):
+                            live.add(path)
+                except (psutil.Error, OSError):
+                    continue
+        except (ImportError, OSError):
+            pass
+        finally:
+            with self._lock:
+                self._live_files = live
+                self._live_checked = time.monotonic()
+                self._live_running = False
 
     def probe(self, now: float | None = None) -> dict:
         current = time.time() if now is None else now
         with self._lock:
+            if sys.platform == 'win32' and not self._live_running and time.monotonic() - self._live_checked >= 5:
+                self._live_running = True
+                # Process handle enumeration must never block the activity API.
+                threading.Thread(target=self._refresh_live_files, daemon=True).start()
             found = set()
             active = 0
             for path in (self.home / "sessions").rglob("*.jsonl"):
                 try:
                     stat = path.stat()
-                    if current - stat.st_mtime > self.STALE_SECONDS:
+                    live_writer = sys.platform == 'win32' and path in self._live_files
+                    if current - stat.st_mtime > self.STALE_SECONDS and not live_writer:
                         continue
                     found.add(path)
                     cached = self._files.get(path)

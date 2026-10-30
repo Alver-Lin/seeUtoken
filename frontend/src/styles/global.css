@@ -150,3 +150,25 @@ body,
 :root[data-sut-appearance] ::-webkit-scrollbar { width: 8px; height: 8px; }
 :root[data-sut-appearance] ::-webkit-scrollbar-thumb { background: var(--sut-border); border-radius: 8px; }
 :root[data-sut-appearance] ::-webkit-scrollbar-track { background: transparent; }
+
+/* Keep the Windows standard/clear distinction over the native desktop material. */
+html.native-windows-acrylic[data-sut-appearance='liquid'] {
+  --sut-bg: rgba(17, 24, 36, .72);
+  --sut-surface: rgba(29, 40, 57, .76);
+  --sut-inset: rgba(45, 60, 81, .62);
+}
+html.native-windows-acrylic[data-sut-appearance='liquid-clear'] {
+  --sut-bg: rgba(17, 24, 36, .18);
+  --sut-surface: rgba(24, 35, 51, .32);
+  --sut-inset: rgba(52, 69, 92, .26);
+}
+html.native-windows-acrylic[data-sut-appearance='liquid-light'] {
+  --sut-bg: rgba(241, 245, 249, .72);
+  --sut-surface: rgba(255, 255, 255, .82);
+  --sut-inset: rgba(241, 246, 252, .64);
+}
+html.native-windows-acrylic[data-sut-appearance='liquid-light-clear'] {
+  --sut-bg: rgba(241, 245, 249, .10);
+  --sut-surface: rgba(255, 255, 255, .30);
+  --sut-inset: rgba(243, 248, 255, .24);
+}

@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
-exe = ROOT / 'dist' / 'seeUtoken-V1.0.1.exe'
+exe = ROOT / 'dist' / 'seeUtoken-V1.0.2.exe'
 with exe.open('rb') as stream:
     assert stream.read(2) == b'MZ', 'The artifact is not a Windows executable'
     stream.seek(0x3C)

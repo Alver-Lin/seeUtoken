@@ -9,7 +9,7 @@ import {
 
 /** 原生 NSGlassEffectView 已接管整窗轮廓时，CSS/SVG 玻璃退场（token-monitor 分层） */
 function nativeLiquidActive() {
-  return window.__seeUtokenNativeMaterial?.type === 'liquid-glass';
+  return ['liquid-glass', 'windows-acrylic', 'windows-translucent'].includes(window.__seeUtokenNativeMaterial?.type);
 }
 
 function observeSurface({ el, filterId, shape, getStyle, cssOnly = false }) {

@@ -78,6 +78,13 @@ class MainNativeMaterialController(FloatNativeMaterialController):
     def sync(self, settings: dict | None = None, on_complete=None) -> dict:
         settings = settings or {}
         mode = normalize_float_glass_style(settings.get("floatGlassStyle"))
+        if sys.platform == "win32":
+            from .windows_material import sync_material
+
+            self._state.update(sync_material(self._win, mode))
+            if on_complete:
+                on_complete()
+            return self.get_state()
         if sys.platform != "darwin":
             self._state = {**self._state, "floatStyle": mode, "type": "opaque"}
             if on_complete:

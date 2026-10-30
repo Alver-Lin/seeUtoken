@@ -9,9 +9,10 @@ const DEFAULT = {
 };
 
 export function normalizeNativeMaterialState(value) {
-  const types = new Set(['liquid-glass', 'vibrancy', 'transparent', 'opaque']);
+  const types = new Set(['liquid-glass', 'vibrancy', 'transparent', 'opaque', 'windows-acrylic', 'windows-translucent']);
   const type = types.has(value?.type) ? value.type : 'transparent';
   return {
+    platform: value?.platform === 'win32' ? 'win32' : null,
     floatStyle: typeof value?.floatStyle === 'string' ? value.floatStyle : null,
     type,
     reducedTransparency: value?.reducedTransparency === true,
@@ -35,6 +36,9 @@ export function applyNativeMaterialClasses(state, root = document.documentElemen
   if (!root) return material;
   root.classList.toggle('native-liquid-glass', material.type === 'liquid-glass');
   root.classList.toggle('native-vibrancy', material.type === 'vibrancy');
+  root.classList.toggle('native-windows', material.platform === 'win32');
+  root.classList.toggle('native-windows-acrylic', material.type === 'windows-acrylic');
+  root.classList.toggle('native-windows-glass', ['windows-acrylic', 'windows-translucent'].includes(material.type));
   root.classList.toggle('native-material-opaque', material.type === 'opaque');
   root.classList.toggle('native-reduced-transparency', material.reducedTransparency);
   root.classList.toggle('native-high-contrast', material.highContrast);
