@@ -109,7 +109,7 @@ class Legacy {
             install()
             shortcut = Path(os.environ['APPDATA']) / 'Microsoft/Windows/Start Menu/Programs/seeUtoken.lnk'
             assert shortcut.is_file(), 'Stable Start Menu shortcut missing'
-            print('PASS: running 1.0.1 -> 1.0.2, portable migration, same-version replacement, registry, shortcuts, user data')
+            print(f'PASS: running 1.0.1 -> {VERSION}, portable migration, same-version replacement, registry, shortcuts, user data')
         finally:
             for process in processes:
                 if process.poll() is None:
