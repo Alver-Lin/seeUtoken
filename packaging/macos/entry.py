@@ -8,8 +8,11 @@ if __name__ == '__main__':
     import threading
     from seeutoken.mac_upgrade import main as complete_upgrade, ensure_user_cleanup
 
-    canonical = Path(sys.executable).parents[2]
-    installed = canonical == Path('/Applications/seeUtoken.app')
+    canonical = Path('/Applications/seeUtoken.app')
+    try:
+        installed = Path(sys.executable).parents[2].samefile(canonical)
+    except OSError:
+        installed = False
     if len(sys.argv) == 2 and sys.argv[1] in ('--cleanup-system-apps', '--complete-upgrade'):
         if not installed:
             raise SystemExit('Upgrade cleanup requires the installed /Applications/seeUtoken.app')

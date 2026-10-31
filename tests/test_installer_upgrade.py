@@ -96,13 +96,14 @@ class MacInstallerTests(unittest.TestCase):
             policies = []
             def command(args, **kwargs):
                 if args[0] == '/usr/bin/pkgbuild':
+                    self.assertTrue(Path(args[-1]).parent.is_dir())
                     policies.extend(plistlib.loads(Path(args[args.index('--component-plist') + 1]).read_bytes()))
                     self.assertEqual(args[args.index('--install-location') + 1], '/Applications')
                     self.assertEqual(args[args.index('--identifier') + 1], 'com.seeutoken.desktop.pkg')
                     self.assertEqual(args[args.index('--version') + 1], meta['VERSION'])
                 return SimpleNamespace(returncode=0)
             with patch('subprocess.run', side_effect=command):
-                package['build'](app, Path(folder) / 'test.pkg')
+                package['build'](app, Path(folder) / 'fresh-dist/test.pkg')
             self.assertEqual(policies, [{
                 'RootRelativeBundlePath': 'seeUtoken.app', 'BundleIsRelocatable': False,
                 'BundleIsVersionChecked': False, 'BundleHasStrictIdentifier': True,

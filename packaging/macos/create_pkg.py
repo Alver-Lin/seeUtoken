@@ -16,6 +16,7 @@ def build(app=None, output=None):
         info = plistlib.load(stream)
     if (info.get('CFBundleIdentifier'), info.get('CFBundleShortVersionString')) != (META['APP_ID'], META['VERSION']):
         raise ValueError('Application identity/version does not match the installer')
+    output.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(['/usr/bin/codesign', '--verify', '--deep', '--strict', str(app)], check=True)
     work = ROOT / 'build' / 'macos'
     work.mkdir(parents=True, exist_ok=True)
