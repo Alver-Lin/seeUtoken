@@ -1,7 +1,14 @@
 #!/bin/sh
 set -eu
-# Register only the final installed app, never a DMG/build staging copy.
+# System copies are removed with Installer privileges. User registration must run
+# in the logged-in user's launchd session, not root's LaunchServices database.
 if [ "$3" = '/' ]; then
-    /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
-        -f /Applications/seeUtoken.app || true
+    EXE='/Applications/seeUtoken.app/Contents/MacOS/seeUtoken'
+    "$EXE" --cleanup-system-apps
+    CONSOLE_USER=$(/usr/bin/stat -f '%Su' /dev/console)
+    if [ "$CONSOLE_USER" != 'root' ] && [ "$CONSOLE_USER" != 'loginwindow' ]; then
+        CONSOLE_UID=$(/usr/bin/id -u "$CONSOLE_USER")
+        /bin/launchctl asuser "$CONSOLE_UID" /usr/bin/sudo -H -u "$CONSOLE_USER" \
+            "$EXE" --complete-upgrade || echo 'User registration cleanup will retry on first launch.' >&2
+    fi
 fi

@@ -10,7 +10,7 @@ META = runpy.run_path(str(ROOT / 'packaging' / 'metadata.py'))
 
 
 def build(app=None, output=None):
-    app = Path(app or ROOT / 'dist' / 'seeUtoken.app')
+    app = Path(app or ROOT / 'build' / 'macos' / 'app' / 'seeUtoken.app')
     output = Path(output or ROOT / 'dist' / f"seeUtoken-V{META['VERSION']}.pkg")
     with (app / 'Contents' / 'Info.plist').open('rb') as stream:
         info = plistlib.load(stream)

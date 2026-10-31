@@ -116,7 +116,7 @@ Codex 默认识别 `PATH` 与 `%APPDATA%\npm` 中安装的原生程序或 npm �
 
 上方下载入口仍保留已发布的 **v1.0.1 历史安装包**。下面描述的是当前源码构建的新安装器，不会改变旧安装包本身的行为。
 
-- **macOS**：打开新 DMG，双击「安装 seeUtoken.pkg」。安装器关闭旧版后，将 `/Applications/seeUtoken.app` 完整替换为新版；应用名和 Bundle ID 保持不变，也支持从拖拽安装的 v1.0.1 升级。同版本重新安装也会替换程序文件。
+- **macOS**：打开新 DMG，双击「安装 seeUtoken.pkg」。安装器关闭旧版后，将 `/Applications/seeUtoken.app` 完整替换为新版；应用名和 Bundle ID 保持不变，也支持从拖拽安装的 v1.0.1 升级。同版本重新安装也会替换程序文件。从 v1.0.3 开始，还会移除系统与用户「应用程序」目录中同一 Bundle ID 的旧版副本，并在登录用户的会话中清理旧挂载、废纸篓和临时打包路径的重复图标记录；无人登录时在首次启动补做清理。
 - **Windows**：双击新 EXE，按安装向导完成安装。程序固定保存在 `%LOCALAPPDATA%\Programs\seeUtoken\seeUtoken.exe`，后续版本复用同一安装记录和开始菜单快捷方式。安装前会关闭当前用户正在运行的已识别旧版，包括 v1.0.1 便携 EXE；若旧版无法退出，安装会停止，保留原有程序。
 - **个人数据保留**：macOS 的 `~/.config/seeUtoken/` 和 Windows 的 `%APPDATA%\seeUtoken\` 均不会被升级或卸载清除。下载目录中的历史 DMG、EXE 安装文件及自行复制到其他目录的便携文件不会被扫描删除；从 v1.0.1 便携版迁移后，请使用开始菜单中的 seeUtoken。
 
@@ -276,10 +276,11 @@ bash packaging/macos/build.sh
 
 脚本会构建前端、准备资源、使用 PyInstaller 打包应用，并生成：
 
-- `dist/seeUtoken.app`
-- `dist/seeUtoken-V1.0.2.pkg`
-- `dist/seeUtoken-V1.0.2.dmg`（内含 PKG 安装器）
-- `dist/seeUtoken-V1.0.2.dmg.sha256`
+- `dist/seeUtoken-V1.0.3.pkg`
+- `dist/seeUtoken-V1.0.3.dmg`（内含 PKG 安装器）
+- `dist/seeUtoken-V1.0.3.dmg.sha256`
+
+构建过程中的 `.app` 放在临时构建目录，打包结束后自动注销并回收，避免开发目录中的副本出现在应用搜索中。
 
 默认使用 `.venv/bin/python` 与系统 `node`，可通过 `SEEU_BUILD_PYTHON` 和 `SEEU_BUILD_NODE` 指定工具路径。当前目标为 **arm64 / macOS 14+**，不提供 Intel Mac 安装包。
 
@@ -293,10 +294,10 @@ powershell -ExecutionPolicy Bypass -File packaging/windows/build.ps1
 
 脚本在项目的 `.venv-windows` 中安装依赖，运行测试、构建前端、生成多尺寸 ICO 图标，再将无控制台应用封装为支持覆盖升级的安装器：
 
-- `dist/seeUtoken-V1.0.2.exe`
-- `dist/seeUtoken-V1.0.2.exe.sha256`
+- `dist/seeUtoken-V1.0.3.exe`
+- `dist/seeUtoken-V1.0.3.exe.sha256`
 
-打包只包含应用资源，自动剔除页面内的本机账户、用量与设置快照。EXE 的文件版本和产品版本为 **1.0.2**；当前构建未做 Windows 代码签名。
+打包只包含应用资源，自动剔除页面内的本机账户、用量与设置快照。EXE 的文件版本和产品版本为 **1.0.3**；当前构建未做 Windows 代码签名。
 
 两端安装器与应用版本统一读取 `seeutoken/__init__.py`。Windows 的应用载荷保存在 `build/windows/app/seeUtoken.exe`，分发时应使用 `dist/` 中的安装器。
 
