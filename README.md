@@ -6,16 +6,13 @@
 
 **让 Cursor 与 Codex 的额度和 Token 用量，一眼可见。**
 
-模型额度首页 · 用量详情大屏 · 桌面侧边栏 · 年度热力图 · Liquid Glass
+模型额度首页 · 用量详情大屏 · 桌面侧边栏 · 年度热力图 
 
 ![macOS](https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-6366f1)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11%20x64-0078D4?logo=windows&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.0.1-16a34a)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
-
-[下载安装](#下载安装) · [功能特性](#功能特性) · [快速开始](#快速开始) · [数据来源与统计口径](#数据来源与统计口径) · [常见问题](#常见问题) · [反馈问题](https://github.com/Alver-Lin/seeUtoken/issues)
 
 </div>
 
@@ -23,7 +20,7 @@
 
 ## 下载安装
 
-当前下载安装版本为 **v1.0.1**，发布于 **2026 年 10 月 29 日**，适用于 macOS 与 Windows。
+当前下载安装版本为 **v1.0.3**，发布于 **2026 年 10 月 29 日**，适用于 macOS 与 Windows。
 
 - **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.1.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg.sha256)
 - **Windows 10/11 x64**：[下载 seeUtoken-V1.0.1.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe.sha256)
@@ -40,7 +37,7 @@ seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的
 
 写代码时，用常驻侧边栏查看剩余额度；需要复盘时，打开详情大屏，查看每次提问的用量、年度活跃热力图和历史趋势。应用读取本机已有的登录状态与会话记录，结合提供方的账户接口获取数据，无需部署额外的服务端。
 
-支持 **macOS 14+（Apple Silicon）**与 **Windows 10/11 x64**，分别提供 DMG/PKG 与 EXE 安装器的构建脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
+支持macOS 14+（Apple Silicon）与Windows 10/11 x64，分别提供 DMG/PKG 与 EXE 安装器的构建脚本。界面使用 Vue 3 + Ant Design Vue，桌面窗口由 Python + pywebview 驱动。
 
 ## 支持的工具
 
@@ -89,60 +86,6 @@ seeUtoken 是一款桌面 AI 编程用量监控工具，把 Cursor 和 Codex 的
 
 macOS 主窗口会按系统能力使用原生 Liquid Glass 或 Vibrancy 兼容效果，标题栏随外观切换。系统开启「降低透明度」时，应用改用不透明背景。
 
-## 快速开始
-
-### Windows EXE（V1.0.1）
-
-1. 使用 Windows 10/11 64 位系统，确保已安装 [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) 与 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。
-2. [下载 seeUtoken-V1.0.1.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe)，双击运行，无需安装 Python 或 Node.js。
-3. 确保本机 Cursor 或 Codex 已登录，在首页查看额度与 Token 用量。
-
-Windows 版包含主页、两种工具详情、系统托盘、可拖动与置顶的侧边栏，以及六种外观。侧边栏按实际轮廓裁剪，不会用透明空白区域遮挡桌面。Windows 11 22H2 及以上的主窗口玻璃外观使用原生 Desktop Acrylic：标准模式遮罩更厚，通透模式保留更多背景色彩。异形侧边栏独立控制窗口透明度，标准模式不透明、通透模式为 80%，保留胶囊与弹窗的裁剪。旧版 Windows 或主窗口材质不可用时，主窗口使用不透明配色；系统关闭透明效果时，所有窗口均恢复不透明。macOS 原生 Liquid Glass 与贴边自动缩进仍为 macOS 专属。设置、缓存、WebView2 登录数据和诊断日志均保存在 `%APPDATA%\seeUtoken\`。重复打开 EXE 会提示已运行，可从托盘恢复主窗口。
-
-Codex 默认识别 `PATH` 与 `%APPDATA%\npm` 中安装的原生程序或 npm 启动器，也可通过 `SEEU_CODEX_EXECUTABLE` 指定 `codex.exe` 的完整路径。Windows 与 WSL 是独立的数据环境；WSL 内部的登录与会话不会自动出现在 Windows 版本中。
-
-### 安装 macOS DMG
-
-可直接[下载 seeUtoken-V1.0.1.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg) 安装；自行构建见下方的[打包 macOS 应用](#打包-macos-应用)。
-
-1. 确认设备使用 Apple Silicon 芯片，并运行 macOS 14 或更高版本。
-2. 打开 DMG，将 `seeUtoken.app` 拖入 `Applications` 文件夹。
-3. 在「应用程序」中打开 seeUtoken，无需额外安装 Python 或 Node.js。
-4. 确保本机 Cursor 或 Codex 已登录，然后进入对应面板查看数据。
-
-当前 DMG 使用本地 ad-hoc 签名，尚未进行 Developer ID 签名及 Apple 公证。首次打开若被系统拦截，请按[安装说明](packaging/macos/INSTALL.txt)操作。
-
-### 覆盖升级（从 v1.0.2 安装器开始）
-
-上方下载入口仍保留已发布的 **v1.0.1 历史安装包**。下面描述的是当前源码构建的新安装器，不会改变旧安装包本身的行为。
-
-- **macOS**：打开新 DMG，双击「安装 seeUtoken.pkg」。安装器关闭旧版后，将 `/Applications/seeUtoken.app` 完整替换为新版；应用名和 Bundle ID 保持不变，也支持从拖拽安装的 v1.0.1 升级。同版本重新安装也会替换程序文件。从 v1.0.3 开始，还会移除系统与用户「应用程序」目录中同一 Bundle ID 的旧版副本，并在登录用户的会话中清理旧挂载、废纸篓和临时打包路径的重复图标记录；无人登录时在首次启动补做清理。
-- **Windows**：双击新 EXE，按安装向导完成安装。程序固定保存在 `%LOCALAPPDATA%\Programs\seeUtoken\seeUtoken.exe`，后续版本复用同一安装记录和开始菜单快捷方式。安装前会关闭当前用户正在运行的已识别旧版，包括 v1.0.1 便携 EXE；若旧版无法退出，安装会停止，保留原有程序。
-- **个人数据保留**：macOS 的 `~/.config/seeUtoken/` 和 Windows 的 `%APPDATA%\seeUtoken\` 均不会被升级或卸载清除。下载目录中的历史 DMG、EXE 安装文件及自行复制到其他目录的便携文件不会被扫描删除；从 v1.0.1 便携版迁移后，请使用开始菜单中的 seeUtoken。
-
-### 从源码运行
-
-准备 **Python 3.10+**；需要构建或修改前端时，还需安装 **Node.js 22+ 与 npm**。
-
-```bash
-git clone https://github.com/Alver-Lin/seeUtoken.git
-cd seeUtoken
-
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-
-cd frontend
-npm ci
-npm run build
-cd ..
-
-python run.py
-```
-
-仓库已包含 `ui/` 构建产物；只运行现有界面时，可跳过前端安装与构建步骤。也可以使用 `python -m seeutoken` 启动。
-
-上述命令适用于 macOS。Windows 使用 `.venv\Scripts\activate` 激活虚拟环境，并需要 WebView2；Linux 的 WebView 运行环境需按 pywebview 要求另行准备。macOS 原生玻璃、贴边收起等功能依赖 AppKit，其他平台不提供相同的原生效果。
 
 ### 首次使用
 
@@ -232,76 +175,7 @@ Cursor 需要能够匹配到本机会话历史与项目目录，Codex 需要记�
 
 效果取决于 macOS 版本、原生材质支持和辅助功能设置。较旧系统会回退到 Vibrancy；开启「降低透明度」时会使用不透明背景。
 
-## 开发与构建
 
-`main` 是 macOS 与 Windows 共用的稳定分支，`dev` 是日常开发分支。两端通过平台判断使用各自的原生实现，从同一代码库分别构建 DMG 和 EXE。功能在 `dev` 完成验证后合入 `main`，再创建版本标签发布。
-
-### 目录结构
-
-```text
-seeUtoken/
-├── seeutoken/          # Python 后端：账户接入、用量统计、桌面窗口与原生材质
-├── frontend/          # Vue 3 + Ant Design Vue 源码
-├── ui/                # 前端构建产物，供桌面应用加载
-├── assets/            # 应用与托盘图标
-├── packaging/         # macOS DMG 与 Windows EXE 打包脚本
-├── .github/workflows/ # Windows 自动构建与打包后启动检查
-├── tests/             # Python 回归测试
-├── run.py             # 启动入口
-└── requirements.txt   # Python 运行依赖
-```
-
-### 前端开发
-
-在 `frontend/` 目录执行 `npm run dev` 可单独预览页面。修改完成后执行 `npm run build`，将界面更新到 `ui/`，再启动桌面应用验证原生交互。
-
-### 运行测试
-
-在项目根目录、已安装依赖并激活虚拟环境后执行：
-
-```bash
-python -m unittest discover -s tests
-node --test frontend/src/pages/float/popupPlacement.test.js frontend/src/pages/float/railDrag.test.js
-```
-
-需要 macOS 窗口服务的原生交互测试默认跳过，可在本机使用 `SEEUTOKEN_NATIVE_TESTS=1` 显式启用。
-
-### 打包 macOS 应用
-
-在 Apple Silicon Mac 上准备好 `.venv`、Python 运行依赖和前端依赖后执行：
-
-```bash
-bash packaging/macos/build.sh
-```
-
-脚本会构建前端、准备资源、使用 PyInstaller 打包应用，并生成：
-
-- `dist/seeUtoken-V1.0.3.pkg`
-- `dist/seeUtoken-V1.0.3.dmg`（内含 PKG 安装器）
-- `dist/seeUtoken-V1.0.3.dmg.sha256`
-
-构建过程中的 `.app` 放在临时构建目录，打包结束后自动注销并回收，避免开发目录中的副本出现在应用搜索中。
-
-默认使用 `.venv/bin/python` 与系统 `node`，可通过 `SEEU_BUILD_PYTHON` 和 `SEEU_BUILD_NODE` 指定工具路径。当前目标为 **arm64 / macOS 14+**，不提供 Intel Mac 安装包。
-
-### 打包 Windows EXE
-
-在 Windows x64 上安装 **Python 3.12 x64（带 py 启动器）**、**Node.js 22+** 和 [Inno Setup 6](https://jrsoftware.org/isdl.php)，从项目根目录执行：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File packaging/windows/build.ps1
-```
-
-脚本在项目的 `.venv-windows` 中安装依赖，运行测试、构建前端、生成多尺寸 ICO 图标，再将无控制台应用封装为支持覆盖升级的安装器：
-
-- `dist/seeUtoken-V1.0.3.exe`
-- `dist/seeUtoken-V1.0.3.exe.sha256`
-
-打包只包含应用资源，自动剔除页面内的本机账户、用量与设置快照。EXE 的文件版本和产品版本为 **1.0.3**；当前构建未做 Windows 代码签名。
-
-两端安装器与应用版本统一读取 `seeutoken/__init__.py`。Windows 的应用载荷保存在 `build/windows/app/seeUtoken.exe`，分发时应使用 `dist/` 中的安装器。
-
-也可以运行 GitHub Actions 中的 **Build Windows EXE** 与 **Build macOS installer** 工作流。除 Windows WebView2 启动检查外，两端均在临时运行器上执行真实安装升级测试，验证运行中的 v1.0.1 被替换、同版本重装和个人数据保留。PyInstaller 需要目标操作系统，不能直接在 macOS 上交叉生成 Windows EXE。
 
 ## 参与贡献
 
