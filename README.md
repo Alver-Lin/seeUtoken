@@ -22,12 +22,15 @@
 
 当前下载安装版本为 **v1.0.3**，发布于 **2026 年 10 月 29 日**，适用于 macOS 与 Windows。
 
-- **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.1.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.dmg.sha256)
-- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.1.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe) · [SHA-256 校验文件](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.1/seeUtoken-V1.0.1.exe.sha256)
+- **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.3.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.3/seeUtoken-V1.0.3.dmg) 
+- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.3.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.3/seeUtoken-V1.0.3.exe) 
 
-安装包已包含应用运行代码与前端，无需安装 Python 或 Node.js。Windows 运行环境与 macOS 首次打开方式见[快速开始](#快速开始)。
 
 **v1.0.1 更新**：新增 Windows 单文件 EXE、系统托盘与侧边栏轮廓裁剪；新增白色标准和白色通透两种 Liquid Glass 外观；统一 macOS 与 Windows 的应用版本和打包说明。
+
+**v1.0.2 更新**：修改Windows部分问题，优化win的样式，以及侧边栏的优化
+
+**v1.0.3 更新**：修改Mac的更新下载逻辑，替换旧版的程序，更新至最新版，Windows同理
 
 [查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.1) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
 
