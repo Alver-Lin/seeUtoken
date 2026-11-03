@@ -16,7 +16,7 @@
 
 </div>
 
-![seeUtoken 展示预览：模型额度首页、Liquid Glass 外观与桌面侧边栏](docs/images/desktop-preview.png)
+![seeUtoken 展示预览：模型额度首页、Liquid Glass 外观与桌面侧边栏](https://github.com/Alver-Lin/seeUtoken/docs/images/desktop-preview.png)
 
 ## 下载安装
 
