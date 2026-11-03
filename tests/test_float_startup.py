@@ -141,21 +141,23 @@ class FloatWindowStartupTests(unittest.TestCase):
         app._quitting = False
         app._float_ready = False
         app.float_win = Mock()
-        app.float_dock = Mock()
+        app.float_dock = Mock(attached=False)
         app.float_native = Mock()
         app.store = SimpleNamespace(get=lambda: {"showFloat": show})
         return app
 
     def test_show_waits_for_webview_material_classes(self):
-        app = self.app()
-        app._set_float_visible(True)
-        app.float_win.show.assert_not_called()
-        app._show_prepared_float()
-        app.float_win.show.assert_not_called()
-        applied = app.float_native.push_to_webview.call_args.kwargs["on_applied"]
-        applied()
-        app.float_win.show.assert_called_once()
-        app.float_dock.set_visible.assert_called_with(True)
+        for platform in ('darwin', 'win32'):
+            with self.subTest(platform=platform), patch('seeutoken.app.sys.platform', platform):
+                app = self.app()
+                app._set_float_visible(True)
+                app.float_win.show.assert_not_called()
+                app._show_prepared_float()
+                app.float_win.show.assert_not_called()
+                applied = app.float_native.push_to_webview.call_args.kwargs["on_applied"]
+                applied()
+                app.float_win.show.assert_called_once()
+                app.float_dock.set_visible.assert_called_with(True)
 
     def test_saved_hidden_preference_is_respected(self):
         app = self.app(show=False)
