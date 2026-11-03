@@ -200,9 +200,4 @@ Cursor 需要能够匹配到本机会话历史与项目目录，Codex 需要记�
 
 欢迎通过 [Issues](https://github.com/Alver-Lin/seeUtoken/issues) 反馈问题，或提交 Pull Request 改进功能。报告问题时请附上系统版本、启动方式、涉及的工具及复现步骤，并去除登录 Token 与私密会话内容。
 
-## 致谢
-
-- [Token Monitor](https://github.com/Javis603/token-monitor/blob/main/README.zh-CN.md)：本 README 的内容组织与展示方式参考。
-- [pywebview](https://github.com/r0x0r/pywebview)、[Vue](https://github.com/vuejs/core) 与 [Ant Design Vue](https://github.com/vueComponent/ant-design-vue)：桌面窗口与界面基础。
-
 seeUtoken 是独立的非官方项目，与 Cursor、OpenAI 或其他工具提供方无隶属关系。
