@@ -47,6 +47,11 @@
           </div>
         </div>
         <div class="reset-modules">
+          <div class="reset-block reset-cards" role="status">
+            <span class="reset-card-label">剩余重置卡</span>
+            <span v-if="data?.resetCardsRemaining != null" class="reset-card-count"><b>{{ data.resetCardsRemaining }}</b><span>张</span></span>
+            <span v-else class="reset-k">{{ data?.syncing ? '正在获取…' : '暂未获取' }}</span>
+          </div>
           <div v-for="item in windows" :key="item.id" class="reset-block">
             <div>
               <div class="reset-k">到期重置 · {{ item.label }}</div>
@@ -87,7 +92,7 @@
       </article>
     </section>
 
-    <section class="panel usage-records codex-records">
+    <section class="panel usage-records">
       <header class="panel-head"><h3>使用记录</h3></header>
       <div class="table-wrap">
         <a-table
@@ -105,9 +110,9 @@
             </template>
             <template v-if="column.key === 'tokens'">
               <div class="token-cell">
-                <span class="token-part"><em>输入（不含缓存）</em> {{ formatTokens(record.input) }}</span>
+                <span class="token-part" title="输入（不含缓存）"><em>输入</em> {{ formatTokens(record.input) }}</span>
                 <span class="token-part"><em>输出</em> {{ formatTokens(record.output) }}</span>
-                <span class="token-part"><em>缓存读写</em> {{ formatTokens(record.cache) }}</span>
+                <span class="token-part" title="缓存读写"><em>缓存</em> {{ formatTokens(record.cache) }}</span>
               </div>
             </template>
           </template>
@@ -183,7 +188,7 @@ watch(heatmap, h => { if (h?.year) year.value = h.year; });
 .toolbar { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
 .toolbar-main, .toolbar-actions { display: flex; align-items: center; gap: 12px; }
 .toolbar-actions { margin-left: auto; flex-wrap: wrap; }
-.brand { width: 28px; height: 28px; object-fit: contain; }
+.brand { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; }
 .toolbar strong { font-size: 18px; }
 .account { color: var(--sut-secondary, #64748b); font-size: 13px; }
 .plan { color: var(--sut-text, #1f2937); font-size: 12px; line-height: 22px; white-space: nowrap; text-transform: capitalize; }
@@ -199,6 +204,10 @@ h3 { margin: 0; color: var(--sut-text, #1f2937); font-size: 15px; font-weight: 6
 .pool-label { margin-top: 6px; font-size: 13px; }
 .reset-modules { display: flex; flex-direction: column; gap: 10px; margin: 0 18px 14px; }
 .reset-block { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--sut-inset, #f8fafc); }
+.reset-card-label { color: var(--sut-secondary, #64748b); font-size: 13px; }
+.reset-card-count { display: inline-flex; align-items: baseline; gap: 6px; color: var(--sut-primary, #1677ff); font-variant-numeric: tabular-nums; }
+.reset-card-count b { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.reset-card-count span { font-size: 12px; }
 .reset-k { color: var(--sut-muted, #94a3b8); font-size: 12px; }
 .reset-when { margin-top: 2px; color: var(--sut-text, #0f172a); font-size: 14px; font-weight: 650; }
 .reset-left { color: var(--sut-primary, #1677ff); font-size: 13px; font-weight: 650; flex-shrink: 0; }

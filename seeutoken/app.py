@@ -153,7 +153,12 @@ class SeeUtokenApp:
         self.float_native = FloatNativeMaterialController(on_ready=self._show_prepared_float)
         self.main_native = MainNativeMaterialController()
         self.float_pointer = FloatPointerController()
-        self.float_dock = FloatDockController(
+        dock_controller = FloatDockController
+        if sys.platform == "win32":
+            from .windows_float_dock import WindowsFloatDockController
+
+            dock_controller = WindowsFloatDockController
+        self.float_dock = dock_controller(
             persist=lambda x, y: self.store.save({"floatX": x, "floatY": y, "floatCollapsed": False}),
             settings=self.store.get(),
         )
@@ -358,7 +363,7 @@ class SeeUtokenApp:
 
             def do_GET(self):
                 parsed = urlparse(self.path)
-                if parsed.path not in ("/api/codex-usage", "/api/codex-activity"):
+                if parsed.path not in ("/api/codex-usage", "/api/codex-activity", "/api/summary-usage"):
                     return super().do_GET()
                 origin = f"http://127.0.0.1:{self.server.server_port}"
                 if self.headers.get("Host") != origin.removeprefix("http://") or self.headers.get("Origin", origin) != origin:
@@ -368,6 +373,9 @@ class SeeUtokenApp:
                 try:
                     if parsed.path == "/api/codex-activity":
                         result = bridge.get_codex_activity()
+                    elif parsed.path == "/api/summary-usage":
+                        year = int(query["year"][0]) if "year" in query else None
+                        result = bridge.get_summary_usage(year, query.get("refresh") == ["1"])
                     else:
                         year = int(query["year"][0]) if "year" in query else None
                         result = bridge.get_codex_usage(query.get("summary") == ["1"], year, query.get("refresh") == ["1"])
@@ -550,6 +558,9 @@ class SeeUtokenApp:
             return
         visible = bool(visible and self._float_ready and self._float_panel_type_count() > 0)
         try:
+            if sys.platform == "win32" and self.float_dock.attached:
+                self.float_dock.set_visible(visible)
+                return
             if visible:
                 self.float_win.show()
             else:

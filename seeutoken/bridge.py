@@ -14,8 +14,10 @@ from .codex_usage import CodexUsage
 from .codex_activity import CodexActivity
 from .cursor_questions import add_cursor_questions
 from .demo import get_demo_data
+from .heatmap import recent_daily_usage
 from .storage import SettingsStore, load_usage_cache, save_usage_cache
 from .token_accounting import project_usage, project_heatmap, token_total
+from .summary_usage import combine_usage
 
 
 def _safe_settings_saved(cb: Callable[[dict[str, Any]], None], settings: dict[str, Any]) -> None:
@@ -89,6 +91,8 @@ class AppBridge:
                 for k, v in data.items()
                 if not str(k).startswith("_") and k not in ("raw", "heatmap")
             }
+            if isinstance(data.get("heatmap"), dict):
+                clean["dailyUsage"] = recent_daily_usage(data["heatmap"].get("days") or {})
             clean = project_usage(clean, bool(self.store.get().get("includeCachedTokens", False)))
             # 事件列表过长也会撑爆 JS 桥，截断即可满足详情页
             events = clean.get("events")
@@ -246,6 +250,8 @@ class AppBridge:
             }
         if today_pool:
             slim["todayPoolTokens"] = today_pool
+        if isinstance(data.get("dailyUsage"), list):
+            slim["dailyUsage"] = data["dailyUsage"]
         return {
             "kind": "card",
             "data": slim,
@@ -365,6 +371,8 @@ class AppBridge:
             merged["periods"] = old_data["periods"]
         if not merged.get("heatmap") and old_data.get("heatmap"):
             merged["heatmap"] = old_data["heatmap"]
+        if "dailyUsage" not in merged and old_data.get("dailyUsage"):
+            merged["dailyUsage"] = old_data["dailyUsage"]
         return merged
 
     def _cached_real_data(self) -> dict[str, Any] | None:
@@ -601,7 +609,7 @@ class AppBridge:
         return settings
 
     def set_float_glass_shape(self, payload: dict | None = None) -> bool:
-        """前端上报悬浮窗轮廓（rail + pop + 尾巴），驱动 macOS 异形 Liquid Glass。"""
+        """接收轮廓与命中区域，供原生材质及两端贴边控制器使用。"""
         if self.float_dock:
             self.float_dock.update_geometry(payload)
         if self.float_native:
@@ -660,6 +668,44 @@ class AppBridge:
 
     def open_dashboard_detail(self, provider: str = "cursor") -> bool:
         return self._defer_navigate("codex" if provider == "codex" else "dashboard")
+
+    def get_summary_usage(self, year: int | None = None, refresh: bool = False) -> dict[str, Any]:
+        target_year = int(year or datetime.now().year)
+        if not 1970 <= target_year <= 2100:
+            raise ValueError('Invalid year')
+        settings = self.store.get()
+        sources, notices = {}, ['Qoder 尚未接入用量数据']
+        cached = self._cached_payload() or {}
+        cursor = cached.get('data') or {}
+        if cursor and not cursor.get('demo'):
+            cursor = copy.deepcopy(cursor)
+            cursor['events'] = add_cursor_questions(cursor.get('events') or [])
+            heatmap = cursor.get('heatmap') or {}
+            if heatmap.get('year') != target_year or refresh:
+                try:
+                    cookie = cursor.get('_authCookie') or resolve_session_token(settings.get('manualToken')).get('cookie')
+                    user_id = (cursor.get('user') or {}).get('id')
+                    if cookie and user_id:
+                        cursor['heatmap'] = fetch_heatmap_for_year(target_year, force=refresh, cookie=cookie, user_id=user_id, allow_demo=False)
+                    else:
+                        notices.append('Cursor 年度热力图尚未同步，暂按已有记录展示')
+                except Exception:
+                    notices.append('Cursor 年度热力图同步失败，展示已有数据')
+            sources['cursor'] = cursor
+            if cached.get('error') or cursor.get('partial'):
+                notices.append('Cursor 部分数据待同步，展示最近可用数据')
+        else:
+            notices.append('Cursor 暂无真实用量数据')
+        try:
+            sources['codex'] = self.get_codex_usage(False, target_year, refresh)['data']
+        except Exception:
+            notices.append('Codex 用量暂时读取失败')
+        if refresh:
+            self.refresh_usage_background()
+        data = combine_usage(sources, target_year, bool(settings.get('includeCachedTokens', False)))
+        data['notices'] = notices
+        data['providers'] = list(sources)
+        return {'data': data, 'updatedAt': int(time.time() * 1000)}
 
     def open_panels(self) -> bool:
         return self._defer_navigate("panels")

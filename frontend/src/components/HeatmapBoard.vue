@@ -70,6 +70,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons-vue';
+import { message } from 'ant-design-vue';
 import { seeUtoken } from '../bridge';
 import { formatTokens, formatTokensExact } from '../utils/format';
 import { tokenBasisLabel } from '../utils/tokenAccounting';
@@ -77,6 +78,7 @@ import { tokenBasisLabel } from '../utils/tokenAccounting';
 const props = defineProps({
   modelValue: { type: Object, default: null },
   provider: { type: String, default: 'cursor' },
+  loadYear: { type: Function, default: null },
 });
 const emit = defineEmits(['update:modelValue']);
 
@@ -130,9 +132,17 @@ async function changeYear(delta) {
   year.value = next;
   heatTip.value = null;
   try {
+    if (props.loadYear) {
+      const heatmap = await props.loadYear(next);
+      if (heatmap) emit('update:modelValue', heatmap);
+      return;
+    }
     const payload = props.provider === 'codex' ? await seeUtoken.getCodexUsage(false, next) : null;
     const res = payload ? { heatmap: payload.data?.heatmap } : await seeUtoken.getHeatmap(next);
     if (res?.heatmap) emit('update:modelValue', res.heatmap);
+  } catch (error) {
+    year.value = Number(props.modelValue?.year) || maxYear;
+    message.error(error?.message || '热力图读取失败');
   } finally {
     loading.value = false;
   }

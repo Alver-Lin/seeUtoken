@@ -16,7 +16,8 @@
               <img class="pop-logo" :src="PROVIDER_META.cursor.logo" alt="" />
               Cursor
             </div>
-            <span v-if="usageData?.user?.membership" class="pop-plan" :title="usageData.user.membership">{{ usageData.user.membership }}</span>
+            <span v-if="!cursorQuota.connected" class="pop-plan">未登录</span>
+            <span v-else-if="usageData?.user?.membership" class="pop-plan" :title="usageData.user.membership">{{ usageData.user.membership }}</span>
             <button
               type="button"
               class="pop-refresh"
@@ -39,7 +40,7 @@
                   <div class="donut-pct">
                     <AnimatedMetric :value="cursorRemainPct" mode="percent" />
                   </div>
-                  <div class="donut-cap">剩余</div>
+                  <div class="donut-cap">{{ cursorQuota.connected ? '剩余' : '未登录' }}</div>
                 </template>
               </DonutChart>
               <div class="pop-donut-name">Cursor 模型</div>
@@ -55,7 +56,7 @@
                   <div class="donut-pct">
                     <AnimatedMetric :value="otherRemainPct" mode="percent" />
                   </div>
-                  <div class="donut-cap">剩余</div>
+                  <div class="donut-cap">{{ cursorQuota.connected ? '剩余' : '未登录' }}</div>
                 </template>
               </DonutChart>
               <div class="pop-donut-name">其余模型</div>
@@ -65,7 +66,13 @@
             <div class="pop-total-label">今日 TOKEN</div>
             <AnimatedMetric class="pop-total-value" :value="todayTokenTotal" mode="exact" />
           </div>
-          <div class="pop-reset">{{ resetText }}</div>
+          <div v-if="cursorQuota.connected" class="pop-reset quota-resets">
+            <div class="quota-reset-row">
+              <span>本周期额度重置</span>
+              <span class="quota-reset-time">{{ cursorResetTime }}</span>
+            </div>
+          </div>
+          <div v-else class="pop-reset">未登录 · 双击 Cursor 登录</div>
           </template>
           <template v-else-if="hoveredId === 'codex'">
             <div class="pop-head">
@@ -82,10 +89,10 @@
               </div>
             </div>
             <div class="pop-total-row" :title="`${tokenBasisLabel(codexData?.includeCachedTokens)}；本机 Codex 记录`"><div class="pop-total-label">今日 TOKEN</div><AnimatedMetric class="pop-total-value" :value="codexData?.usageTokens?.today || 0" mode="exact" /></div>
-            <div class="pop-reset codex-resets">
-              <div v-for="item in codexWindows" :key="item.id" class="codex-reset-row">
+            <div class="pop-reset quota-resets">
+              <div v-for="item in codexWindows" :key="item.id" class="quota-reset-row">
                 <span>{{ item.label }}重置</span>
-                <span class="codex-reset-time">{{ codexResetTime(item) }}</span>
+                <span class="quota-reset-time">{{ codexResetTime(item) }}</span>
               </div>
             </div>
           </template>
@@ -144,6 +151,7 @@
             </div>
           </div>
           <span class="pct" :class="{ muted: !svc.live }">{{ percentLabel(svc) }}</span>
+          <span v-if="svc.id === 'cursor' && !cursorQuota.connected" class="login-status">未登录</span>
         </button>
         </div>
       </div>
@@ -170,6 +178,7 @@ import { quotaText, quotaSegments, useCodexUsage } from '../../utils/codex';
 import { popupPlacement } from './popupPlacement';
 import { createRailDrag } from './railDrag';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
+import { cursorQuotaState, isCursorAuthError } from '../../utils/cursorQuota';
 
 const RING_R = 17;
 const RING_C = 2 * Math.PI * RING_R;
@@ -185,6 +194,7 @@ const PROVIDER_META = {
 
 const expanded = ref(true);
 const usageData = ref(null);
+const authRequired = ref(false);
 const refreshing = ref(false);
 const bootstrapSettings = window.__seeUtokenFloatSettings;
 let includeCachedTokens = !!bootstrapSettings?.includeCachedTokens;
@@ -204,7 +214,11 @@ const codexWindows = computed(() => codexData.value?.windows || [{ id: 'primary'
 
 function codexResetTime(item) {
   if (!item?.resetsAt || item.stale) return '等待更新';
-  const date = new Date(item.resetsAt);
+  return formatResetTime(item.resetsAt);
+}
+function formatResetTime(timestamp) {
+  if (!timestamp) return '等待更新';
+  const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return '等待更新';
   const time = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
   return `${date.getMonth() + 1}月${date.getDate()}日 ${time}`;
@@ -267,16 +281,8 @@ const primaryMeta = computed(() => visibleServices.value[0] || PROVIDER_META.cur
 
 const hoveredMeta = computed(() => (hoveredId.value ? PROVIDER_META[hoveredId.value] : null));
 
-const cursorPct = computed(() => {
-  if (!usageData.value) return 0;
-  const q = usageData.value.quota || {};
-  const l = usageData.value.limits || {};
-  return Math.round(
-    Number(
-      l.cursorModelsPercent ?? q.cursorModelsPercent ?? q.autoPercent ?? 0
-    ) || 0
-  );
-});
+const cursorQuota = computed(() => cursorQuotaState(usageData.value, authRequired.value));
+const cursorPct = computed(() => cursorQuota.value.cursorUsedPercent);
 function usedDonutSegments(usedPct, color) {
   const used = Math.min(100, Math.max(0, Number(usedPct) || 0));
   const remain = Math.max(0, 100 - used);
@@ -284,21 +290,15 @@ function usedDonutSegments(usedPct, color) {
   if (used + remain <= 0) return [{ value: 1, color: track }];
   // 灰色 = 已用，彩色 = 剩余（与首页额度卡片一致）
   return [
-    { value: used || 0.0001, color: track },
-    { value: remain || 0.0001, color },
+    { value: used, color: track },
+    { value: remain, color },
   ];
 }
 
-const otherPct = computed(() =>
-  Math.round(
-    Number(
-      usageData.value?.limits?.otherModelsPercent ?? usageData.value?.quota?.apiPercent ?? 0
-    ) || 0
-  )
-);
+const otherPct = computed(() => cursorQuota.value.otherUsedPercent);
 
-const cursorRemainPct = computed(() => Math.max(0, 100 - cursorPct.value));
-const otherRemainPct = computed(() => Math.max(0, 100 - otherPct.value));
+const cursorRemainPct = computed(() => cursorQuota.value.cursorRemainingPercent);
+const otherRemainPct = computed(() => cursorQuota.value.otherRemainingPercent);
 
 const cursorDonutSegments = computed(() => usedDonutSegments(cursorPct.value, '#34d399'));
 const otherDonutSegments = computed(() => usedDonutSegments(otherPct.value, '#a78bfa'));
@@ -372,6 +372,7 @@ function periodTokenCount(data, periodKey) {
 }
 
 const todayTokenTotal = computed(() => {
+  if (!cursorQuota.value.connected) return 0;
   const fromPeriod = periodTokenCount(usageData.value, 'today');
   if (fromPeriod != null) return fromPeriod;
   return cursorTodayTokens.value + otherTodayTokens.value;
@@ -408,6 +409,16 @@ function mergeUsageData(next, prev) {
     }
   }
   return merged;
+}
+
+function applyUsagePayload(payload) {
+  if (!payload || payload.kind === 'ack') return;
+  if (isCursorAuthError(payload.error)) {
+    authRequired.value = true;
+  } else if (!payload.error && cursorQuotaState(payload.data).connected) {
+    authRequired.value = false;
+  }
+  if (payload.data) usageData.value = mergeUsageData(payload.data, usageData.value);
 }
 
 async function pullUsageTokens() {
@@ -502,15 +513,10 @@ const ballPercentLabel = computed(() => {
 
 const ballOffset = computed(() => BALL_C * (1 - Math.min(100, ballPercent.value) / 100));
 
-const resetText = computed(() => {
-  const ts = usageData.value?.cycle?.resetAt || usageData.value?.cycle?.end;
-  if (!ts) return '—';
-  const d = new Date(ts);
-  if (Number.isNaN(d.getTime())) return '—';
-  return `${d.getMonth() + 1}月${d.getDate()}日 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} 重置`;
-});
+const cursorResetTime = computed(() => formatResetTime(usageData.value?.cycle?.resetAt || usageData.value?.cycle?.end));
 
 function itemTitle(svc) {
+  if (svc.id === 'cursor' && !cursorQuota.value.connected) return 'Cursor · 未登录 · 双击登录';
   if (svc.id === 'cursor' || svc.id === 'codex') return `${svc.name} · 双击进入详情`;
   return svc.name;
 }
@@ -542,14 +548,14 @@ function percentFor(svc) {
     const win = codexData.value?.windows?.[0];
     return win?.remainingPercent == null ? 100 : win.usedPercent;
   }
-  if (svc.id === 'cursor' && usageData.value && !usageData.value.demo) return cursorPct.value;
+  if (svc.id === 'cursor') return cursorPct.value;
   return 0;
 }
 
 function percentLabel(svc) {
   if (svc.id === 'codex') return quotaText(codexData.value?.windows?.[0]);
-  if (svc.id === 'cursor' && usageData.value && !usageData.value.demo) {
-    return `${cursorRemainPct.value}%`;
+  if (svc.id === 'cursor') {
+    return `${Math.round(cursorRemainPct.value)}%`;
   }
   return '0%';
 }
@@ -709,16 +715,16 @@ async function refresh() {
     for (let i = 0; i < 20; i += 1) {
       await sleep(300);
       const pushed = seeUtoken.takeLastCard?.();
+      applyUsagePayload(pushed);
       if (pushed?.data) {
-        usageData.value = mergeUsageData(pushed.data, usageData.value);
         if (periodTokenCount(usageData.value, 'today') != null && !usageData.value?.partial) {
           break;
         }
       }
       try {
         const res = await seeUtoken.getUsageSummary();
+        applyUsagePayload(res);
         if (res?.data) {
-          usageData.value = mergeUsageData(res.data, usageData.value);
           if (periodTokenCount(usageData.value, 'today') != null && !res.data?.partial) {
             break;
           }
@@ -747,17 +753,11 @@ onMounted(async () => {
     if (state.floatStyle) floatGlassStyle.value = normalizeFloatGlassStyle(state.floatStyle);
     nativeMaterialTick.value += 1;
   });
-  unsub = seeUtoken.onUsageUpdated((payload) => {
-    if (payload?.data) {
-      usageData.value = mergeUsageData(payload.data, usageData.value);
-    }
-  });
+  unsub = seeUtoken.onUsageUpdated(applyUsagePayload);
   const primed = seeUtoken.takeLastCard?.();
-  if (primed?.data) usageData.value = mergeUsageData(primed.data, usageData.value);
+  applyUsagePayload(primed);
   const primedDetail = seeUtoken.takeLastDetail?.();
-  if (primedDetail?.data) {
-    usageData.value = mergeUsageData(primedDetail.data, usageData.value);
-  }
+  applyUsagePayload(primedDetail);
   try {
     const settings = await seeUtoken.getSettings();
     applyFloatGlassFromSettings(settings);
@@ -768,7 +768,7 @@ onMounted(async () => {
   } catch (_) {}
   try {
     const res = await seeUtoken.getUsageSummary();
-    if (res?.data) usageData.value = mergeUsageData(res.data, usageData.value);
+    applyUsagePayload(res);
   } catch (_) {}
   await pullUsageTokens();
   window.setInterval(() => {
@@ -1066,6 +1066,10 @@ body,
   color: rgba(255, 255, 255, 0.35);
   font-weight: 500;
 }
+.login-status {
+  font-size: 9px;
+  line-height: 1;
+}
 .pop {
   width: 300px;
   flex-shrink: 0;
@@ -1245,23 +1249,25 @@ body,
   font-size: 11px;
   text-align: center;
 }
-.codex-resets {
+.quota-resets {
   display: flex;
   flex-direction: column;
   gap: 5px;
   margin-bottom: 0;
   padding: 0 3px;
 }
-.codex-reset-row {
+.quota-reset-row {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   line-height: 1.5;
+  text-align: left;
 }
-.codex-reset-time {
+.quota-reset-time {
   color: rgba(255, 255, 255, 0.65);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 .pop-muted .pop-status {
   margin: 12px 0 8px;

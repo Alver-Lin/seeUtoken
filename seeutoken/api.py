@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Any
@@ -312,6 +313,7 @@ def _normalize_events(payload: dict | None) -> list[dict[str, Any]]:
         project = resolve_project_name(cid, project_map)
         out.append(
             {
+                "id": e.get("usageEventId") or e.get("id") or "",
                 "time": time_ms,
                 "model": _model_display_name(e.get("modelIntent") or e.get("model")) if (e.get("modelIntent") or e.get("model")) else "—",
                 "kind": e.get("kind") or "",
@@ -336,13 +338,15 @@ def _fetch_all_events(
     end_ms: int,
     *,
     page_size: int = 500,
-    max_pages: int = 12,
+    max_pages: int | None = 12,
+    require_complete: bool = False,
 ) -> list[dict[str, Any]]:
-    """分页拉取事件。热力图后台用，限制页数避免拖垮首屏。"""
+    """Fetch history; exact call counts require every page and the reported total."""
     all_events: list[dict[str, Any]] = []
+    seen_ids = set()
     page = 1
     total = float("inf")
-    while len(all_events) < total and page <= max_pages:
+    while len(all_events) < total and (max_pages is None or page <= max_pages):
         res = _api_fetch(
             "/api/dashboard/get-filtered-usage-events",
             cookie=cookie,
@@ -356,13 +360,43 @@ def _fetch_all_events(
                 "pageSize": page_size,
             },
         )
+        if require_complete and (not isinstance(res, dict) or res.get('totalUsageEventsCount') is None):
+            raise ApiError('Cursor 调用明细缺少总条数，无法核对完整性')
         batch = _normalize_events(res)
         total = float(res.get("totalUsageEventsCount", len(all_events) + len(batch))) if res else len(all_events)
+        if require_complete:
+            if total < 0 or not total.is_integer():
+                raise ApiError('Cursor 调用明细总条数无效')
+            unique = []
+            for event in batch:
+                identifier = event.get('id')
+                if identifier and identifier in seen_ids:
+                    continue
+                if identifier:
+                    seen_ids.add(identifier)
+                unique.append(event)
+            batch = unique
         all_events.extend(batch)
-        if not batch or len(batch) < page_size:
+        if not batch or (not require_complete and len(batch) < page_size):
             break
         page += 1
+    if require_complete and len(all_events) != total:
+        raise ApiError('Cursor 调用明细未完整返回，暂不更新调用次数')
     return all_events
+
+
+def _apply_event_call_counts(data: dict, events: list[dict], starts: dict[str, int], end_ms: int) -> None:
+    """Backfill counts from complete history, never from the recent detail table."""
+    for period, start_ms in starts.items():
+        selected = [event for event in events if start_ms <= event['time'] <= end_ms]
+        counts = Counter(event['model'] for event in selected)
+        summary = (data.get('periods') or {}).get(period)
+        if summary is not None and summary.get('calls') is None:
+            summary['calls'] = len(selected)
+        for model in (data.get('models') or {}).get(period) or []:
+            has_usage = any(model.get(field) for field in ('input', 'output', 'cache', 'tokens', 'processedTokens'))
+            if model.get('calls') is None and (model['model'] in counts or not has_usage):
+                model['calls'] = counts.get(model['model'], 0)
 
 
 def fetch_heatmap_for_year(
@@ -372,9 +406,10 @@ def fetch_heatmap_for_year(
     *,
     user_id: Any = None,
     cookie: str | None = None,
+    allow_demo: bool = True,
 ) -> dict[str, Any]:
     year = _safe_year(year)
-    key = str(year)
+    key = str(year) if allow_demo else f"real:{user_id}:{year}"
     if not force and key in _heatmap_cache:
         return _heatmap_cache[key]
 
@@ -384,6 +419,8 @@ def fetch_heatmap_for_year(
         auth = resolve_session_token(manual_token)
         auth_cookie = auth.get("cookie")
     if not auth_cookie:
+        if not allow_demo:
+            raise ApiError('Cursor 尚未登录', code='NO_SESSION')
         demo = get_demo_heatmap(year)
         _heatmap_cache[key] = demo
         return demo
@@ -392,6 +429,8 @@ def fetch_heatmap_for_year(
         me = _safe_fetch("/api/auth/me", cookie=auth_cookie)
         auth_user = (me or {}).get("id")
     if not auth_user:
+        if not allow_demo:
+            raise ApiError('Cursor 账户暂不可用', code='NO_SESSION')
         demo = get_demo_heatmap(year)
         _heatmap_cache[key] = demo
         return demo
@@ -717,6 +756,16 @@ def enrich_usage_details(data: dict[str, Any]) -> dict[str, Any]:
     all_start = float(
         int(datetime.now().replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0).timestamp() * 1000)
     )
+    starts = {'today': int(day_start.timestamp() * 1000), 'week': int(week_start),
+              'month': int(month_start), 'cycle': cycle_start, 'all': int(all_start)}
+
+    def fetch_call_events():
+        try:
+            return _fetch_all_events(cookie, user_id, min(starts.values()), now,
+                                     max_pages=None, require_complete=True)
+        except Exception:
+            # Other token/quota data remains available if history cannot be verified.
+            return None
 
     def post_agg(start: float):
         return _safe_fetch(
@@ -731,8 +780,9 @@ def enrich_usage_details(data: dict[str, Any]) -> dict[str, Any]:
             },
         )
 
-    with ThreadPoolExecutor(max_workers=7) as pool:
+    with ThreadPoolExecutor(max_workers=8) as pool:
         futures = {
+            pool.submit(fetch_call_events): 'callEvents',
             pool.submit(post_agg, cycle_start): "cycle",
             pool.submit(post_agg, day_start.timestamp() * 1000): "today",
             pool.submit(post_agg, week_start): "week",
@@ -779,6 +829,13 @@ def enrich_usage_details(data: dict[str, Any]) -> dict[str, Any]:
         events=results.get("events"),
         partial=False,
     )
+    call_events = results.get('callEvents')
+    if call_events is not None:
+        _apply_event_call_counts(composed, call_events, starts, now)
+        heatmap = build_year_grid(datetime.now().year, aggregate_days_from_events(call_events))
+        composed['heatmap'] = heatmap
+        _heatmap_cache[str(heatmap['year'])] = heatmap
+        _heatmap_cache[f"real:{user_id}:{heatmap['year']}"] = heatmap
     # 保留首屏已算好的额度（避免 usage 覆盖造成闪烁）
     composed["quota"] = data.get("quota") or composed["quota"]
     composed["limits"] = data.get("limits") or composed["limits"]

@@ -41,6 +41,9 @@ def project_usage(data: dict, include_cache: bool) -> dict:
     for item in result.get('events') or []:
         item['tokens'] = token_total(item, include_cache)
         item['processedTokens'] = token_total(item, True)
+    for item in result.get('dailyUsage') or []:
+        item['tokens'] = token_total(item, include_cache)
+        item['processedTokens'] = token_total(item, True)
     if result.get('periods'):
         result['usageTokens'] = {
             period: item['tokens'] for period, item in result['periods'].items()

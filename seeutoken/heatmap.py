@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import calendar
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 
@@ -33,6 +33,15 @@ def aggregate_days_from_events(events: list[dict[str, Any]]) -> dict[str, dict[s
             bucket[field] += int(e.get(field) or 0)
         bucket["calls"] = int(bucket["calls"]) + 1
     return days
+
+
+def recent_daily_usage(days: dict[str, dict[str, Any]], now: datetime | None = None) -> list[dict[str, Any]]:
+    """Small, cache-independent daily counters for the home page's seven bars."""
+    today = (now or datetime.now()).date()
+    return [
+        {"date": key, **(days.get(key) or {"input": 0, "output": 0, "cache": 0, "tokens": 0, "calls": 0})}
+        for key in ((today - timedelta(days=offset)).isoformat() for offset in range(6, -1, -1))
+    ]
 
 
 def level_for_tokens(tokens: float | int, max_tokens: float | int) -> int:

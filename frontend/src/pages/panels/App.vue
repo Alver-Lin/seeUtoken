@@ -2,10 +2,22 @@
   <div class="quota-home">
     <ModalContext />
     <div class="toolbar">
-      <div>
-        <div class="toolbar-title">模型额度</div>
-      </div>
+      <nav class="home-nav" aria-label="主导航">
+        <button class="toolbar-title" :class="{ active: activeModule === 'quota' }" :aria-pressed="activeModule === 'quota'" @click="activeModule = 'quota'">模型额度</button>
+        <button class="toolbar-title" :class="{ active: activeModule === 'summary' }" :aria-pressed="activeModule === 'summary'" @click="activeModule = 'summary'">汇总记录</button>
+      </nav>
       <div class="toolbar-actions">
+        <a-button
+          v-if="activeModule === 'summary'"
+          type="default"
+          class="settings-btn"
+          aria-label="刷新汇总记录"
+          :title="summaryDashboard?.updatedAt ? `刷新汇总记录（更新于 ${new Date(summaryDashboard.updatedAt).toLocaleTimeString('zh-CN')}）` : '刷新汇总记录'"
+          :loading="summaryDashboard?.loading || false"
+          @click="summaryDashboard?.refresh(true)"
+        >
+          <template #icon><ReloadOutlined /></template>
+        </a-button>
         <a-button
           type="default"
           class="settings-btn"
@@ -15,6 +27,7 @@
           <template #icon><SettingOutlined /></template>
         </a-button>
         <a-button
+          v-if="activeModule === 'quota'"
           type="primary"
           :disabled="!panelsLoaded || availableProviders.length === 0"
           :title="!panelsLoaded ? '正在加载已添加的软件' : availableProviders.length === 0 ? '所有软件均已添加，删除面板后可重新添加' : '每个软件只能添加一个额度面板'"
@@ -26,7 +39,8 @@
       </div>
     </div>
 
-    <section class="panel-grid">
+    <SummaryDashboard v-if="activeModule === 'summary'" ref="summaryDashboard" :include-cached-tokens="includeCachedTokens" />
+    <section v-else class="panel-grid">
       <article
         v-for="panel in panels"
         :key="panel.id"
@@ -60,21 +74,11 @@
 
         <div class="card-mid">
           <template v-if="cardMeta(panel).connected">
-            <div class="card-stats">
-              <div class="card-token-basis">{{ tokenBasisLabel(includeCachedTokens) }}</div>
-              <div class="card-stat-row">
-                <span class="card-stat-label">当日 Token</span>
-                <span class="card-stat-v" :title="cardMeta(panel).todayTokensExact">{{
-                  cardMeta(panel).todayTokensText
-                }}</span>
-              </div>
-              <div class="card-stat-row">
-                <span class="card-stat-label">{{ panel.type === 'codex' ? '本周 Token' : '本周期 Token' }}</span>
-                <span class="card-stat-v" :title="cardMeta(panel).cycleTokensExact">{{
-                  cardMeta(panel).cycleTokensText
-                }}</span>
-              </div>
-            </div>
+            <WeeklyUsageChart
+              :daily-usage="panelUsage(panel)?.dailyUsage"
+              :today-tokens="periodTokenCount(panelUsage(panel), 'today')"
+              :include-cached-tokens="includeCachedTokens"
+            />
             <div class="card-pool">
               <DonutChart
                 :size="112"
@@ -178,7 +182,7 @@
           <div class="float-settings-row">
             <div>
               <div class="float-settings-label">贴边自动缩进</div>
-              <div class="float-settings-desc">{{ supportsNativeDocking ? '靠近屏幕左右边缘后移出鼠标收起，悬停展开（macOS）' : '当前平台支持拖动与置顶，贴边自动缩进仅适用于 macOS' }}</div>
+              <div class="float-settings-desc">{{ supportsNativeDocking ? '靠近屏幕左右边缘后移出鼠标收起，悬停展开' : '当前平台支持拖动与置顶，贴边自动缩进适用于 macOS 和 Windows' }}</div>
             </div>
             <a-switch
               aria-label="贴边自动缩进"
@@ -251,16 +255,20 @@ import {
   ThunderboltOutlined,
   DeleteOutlined,
   SettingOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons-vue';
 import cursorLogo from '../../assets/brand/cursor-logo.svg';
 import codexLogo from '../../assets/brand/codex-logo.svg';
 import qoderLogo from '../../assets/brand/qoder-logo.svg';
 import { seeUtoken } from '../../bridge';
 import DonutChart from '../../components/DonutChart.vue';
+import WeeklyUsageChart from '../../components/WeeklyUsageChart.vue';
+import SummaryDashboard from './SummaryDashboard.vue';
 import { codexPlanLabel, quotaSegments, quotaText, useCodexUsage } from '../../utils/codex';
 import { formatPercent, formatTokens, formatTokensExact } from '../../utils/format';
 import { applyMainAppearance } from '../../utils/mainAppearance';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
+import { cursorQuotaState, isCursorAuthError } from '../../utils/cursorQuota';
 import {
   DEFAULT_FLOAT_GLASS_STYLE,
   FLOAT_APPEARANCE_OPTIONS,
@@ -282,6 +290,8 @@ const DEFAULT_PANELS = [
 ];
 
 const panels = ref([...DEFAULT_PANELS]);
+const activeModule = ref('quota');
+const summaryDashboard = ref(null);
 const panelsLoaded = ref(false);
 const addedProviders = computed(() => new Set(panels.value.map(panel => panel.type || panel.provider || 'cursor')));
 const availableProviders = computed(() => QUOTA_PROVIDERS.filter(item => !addedProviders.value.has(item.value)));
@@ -301,8 +311,8 @@ const settingsOpen = ref(false);
 const showFloat = ref(true);
 const floatAutoHide = ref(true);
 const supportsNativeDocking = window.__seeUtokenFloatSettings?.platform
-  ? window.__seeUtokenFloatSettings.platform === 'darwin'
-  : /Macintosh|Mac OS X/.test(navigator.userAgent);
+  ? ['darwin', 'win32'].includes(window.__seeUtokenFloatSettings.platform)
+  : /Macintosh|Mac OS X|Windows/.test(navigator.userAgent);
 const floatAlwaysOnTop = ref(true);
 const floatExpanded = ref(false);
 const floatSettingsSaving = ref(false);
@@ -387,17 +397,11 @@ function tokenCountExact(data, periodKey) {
 }
 
 function isRealCursorUsage(data) {
-  if (!data || isDemoFlag(data.demo)) return false;
-  const q = data.quota;
-  if (!q || typeof q !== 'object') return false;
-  return !!(
-    data.user?.email ||
-    data.authSource ||
-    q.autoPercent != null ||
-    q.cursorModelsPercent != null ||
-    q.usedPercent != null ||
-    Number(q.total) > 0
-  );
+  return cursorQuotaState(data).connected && !!data.quota;
+}
+
+function panelUsage(panel) {
+  return panel.type === 'codex' ? codexData.value : usagePayload.value?.data;
 }
 
 function cardMeta(panel) {
@@ -436,9 +440,9 @@ function cardMeta(panel) {
   }
 
   const data = usagePayload.value?.data;
-  const q = data?.quota;
+  const cursorQuota = cursorQuotaState(data, isCursorAuthError(usagePayload.value?.error));
 
-  if (!isRealCursorUsage(data)) {
+  if (!cursorQuota.connected) {
     return {
       remainText: '未连接',
       planText: '点击卡片登录 Cursor 并同步',
@@ -446,19 +450,21 @@ function cardMeta(panel) {
       connected: false,
       cursorSegments: [{ value: 1, color: 'transparent' }],
       otherSegments: [{ value: 1, color: 'transparent' }],
-      cursorRemainText: '—',
-      otherRemainText: '—',
-      todayTokensText: '—',
-      cycleTokensText: '—',
+      cursorRemainText: '0%',
+      otherRemainText: '0%',
+      todayTokensText: '0',
+      cycleTokensText: '0',
       todayTokensExact: '',
       cycleTokensExact: '',
     };
   }
 
-  const cursorUsed = Number(q.cursorModelsPercent ?? q.autoPercent) || 0;
-  const otherUsed = Number(q.otherModelsPercent ?? q.apiPercent) || 0;
-  const cursorRemain = Math.max(0, 100 - cursorUsed);
-  const otherRemain = Math.max(0, 100 - otherUsed);
+  const {
+    cursorUsedPercent: cursorUsed,
+    otherUsedPercent: otherUsed,
+    cursorRemainingPercent: cursorRemain,
+    otherRemainingPercent: otherRemain,
+  } = cursorQuota;
   const membership = data.user?.membership || 'Pro';
   const ts = usagePayload.value?.updatedAt || data.fetchedAt;
   const updatedText = ts
@@ -660,12 +666,17 @@ function applyUsage(p) {
   // 拒绝串台回调（heatmap / navigate 回包）把卡片打回「未连接」
   if (next != null && !looksLikeUsageData(next)) return;
   const prev = usagePayload.value?.data;
+  if (isCursorAuthError(payload.error)) {
+    usagePayload.value = { ...payload, data: next || prev };
+    return;
+  }
   // 已有真实数据时：拒绝演示、空包、以及「不像已连接」的残缺包
   if (isRealCursorUsage(prev)) {
     if (!next || isDemoFlag(next.demo) || !isRealCursorUsage(next)) return;
   }
   if (next && prev && isRealCursorUsage(prev)) {
     const merged = { ...next };
+    if (!Array.isArray(merged.dailyUsage) && Array.isArray(prev.dailyUsage)) merged.dailyUsage = prev.dailyUsage;
     if (periodTokenCount(merged, 'today') == null && periodTokenCount(prev, 'today') != null) {
       merged.usageTokens = {
         ...(merged.usageTokens || {}),
@@ -689,6 +700,7 @@ function applyUsage(p) {
 }
 
 function hasCursorQuota(p) {
+  if (isCursorAuthError(p?.error)) return false;
   const raw = p?.data !== undefined ? p?.data : p;
   return isRealCursorUsage(raw);
 }
@@ -831,10 +843,31 @@ onUnmounted(() => {
 }
 
 .toolbar-title {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 650;
-  color: var(--sut-text, #1f2937);
+  line-height: 22px;
+  color: var(--sut-secondary, #64748b);
 }
+
+.home-nav { display: flex; align-items: center; gap: 8px; }
+.toolbar-title:hover { color: var(--sut-text, #0f172a); background: var(--sut-control-hover, var(--sut-inset, #f8fafc)); }
+.toolbar-title.active {
+  color: var(--sut-text, #0f172a);
+  background: var(--sut-control, var(--sut-inset, #f8fafc));
+  border-color: var(--sut-border, #e7ebf0);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+.toolbar-title:focus-visible { outline: 2px solid var(--sut-primary, #1677ff); outline-offset: 3px; }
 
 .toolbar-actions {
   display: flex;
@@ -978,6 +1011,7 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
+.card-icon.cursor .card-logo,
 .card-icon.codex .card-logo,
 .card-icon.qoder .card-logo {
   width: 22px;
@@ -1003,50 +1037,6 @@ onUnmounted(() => {
   align-items: center;
   margin-top: 14px;
   min-height: 132px;
-}
-
-.card-stats {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  min-width: 0;
-  min-height: 112px;
-  padding: 12px 14px;
-  border: 1px solid var(--sut-border, #e8edf3);
-  border-radius: 12px;
-  background: linear-gradient(180deg, var(--sut-inset, #fafbfd) 0%, var(--sut-inset, #f4f7fb) 100%);
-  box-sizing: border-box;
-}
-
-.card-stat-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: baseline;
-  column-gap: 12px;
-}
-
-.card-token-basis {
-  color: var(--sut-secondary, #64748b);
-  font-size: 11px;
-  line-height: 1.3;
-}
-
-.card-stat-label {
-  color: var(--sut-secondary, #64748b);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.card-stat-v {
-  color: var(--sut-text, #0f172a);
-  font-size: 15px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.3;
-  white-space: nowrap;
-  text-align: right;
 }
 
 .card-pool {
@@ -1148,7 +1138,7 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .panel-grid {
     grid-template-columns: 1fr;
   }

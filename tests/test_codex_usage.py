@@ -54,6 +54,16 @@ class CodexUsageTests(unittest.TestCase):
         self.assertEqual(rows['test-session:turn:missing']['prompt'], '')
         self.assertEqual(rows['test-session:turn:one']['tokens'], 120)
 
+    def test_home_summary_includes_seven_day_counters_without_question_content(self):
+        self.write([self.start('one'), self.question('private question'), self.event(100, 70, 10)])
+        data = CodexUsage(self.root).get(summary=True, remote=False)['data']
+        self.assertEqual(len(data['dailyUsage']), 7)
+        today = data['dailyUsage'][-1]
+        self.assertEqual(today['date'], datetime.now().strftime('%Y-%m-%d'))
+        self.assertEqual(today['tokens'], data['usageTokens']['today'])
+        self.assertEqual((today['input'], today['output'], today['cache']), (30, 10, 70))
+        self.assertNotIn('private question', json.dumps(data))
+
     def test_attached_file_metadata_is_removed_from_question(self):
         self.write([self.start('one'), self.question(
             '# Files mentioned by the user:\n\n## screenshot.png: /private/screenshot.png\n'
@@ -321,6 +331,35 @@ class CodexUsageTests(unittest.TestCase):
             self.assertEqual(worker.return_value.start.call_count, 3)
             service.get(summary=True, auto_refresh_minutes=0, refresh=True)
             self.assertEqual(worker.return_value.start.call_count, 3)  # no concurrent requests
+
+    def test_reset_cards_use_authoritative_count_including_zero(self):
+        service = CodexUsage(self.root)
+        for count, rows in ((2, [{'id': 'private-credit-id'}]), (1, None), (0, [])):
+            with self.subTest(count=count):
+                service._remote = {'limits': {'rateLimitResetCredits': {
+                    'availableCount': count, 'credits': rows}}}
+                for summary in (True, False):
+                    data = service.get(summary=summary, remote=False)['data']
+                    self.assertEqual(data['resetCardsRemaining'], count)
+                    self.assertNotIn('private-credit-id', json.dumps(data))
+
+    def test_reset_cards_missing_or_invalid_are_unknown(self):
+        service = CodexUsage(self.root)
+        for credits in (None, {}, {'credits': []}, {'availableCount': -1},
+                        {'availableCount': True}, {'availableCount': 1.5}, {'availableCount': '1'}):
+            with self.subTest(credits=credits):
+                service._remote = {'limits': {'rateLimitResetCredits': credits}}
+                self.assertIsNone(service.get(remote=False)['data']['resetCardsRemaining'])
+        service._remote = {'limits': {'rateLimits': {'credits': {'balance': '100'}}}}
+        self.assertIsNone(service.get(remote=False)['data']['resetCardsRemaining'])
+
+    def test_reset_cards_refresh_replaces_previous_count(self):
+        service = CodexUsage(self.root)
+        for count in (1, 0, None):
+            response = {'limits': {'rateLimitResetCredits': {'availableCount': count}}}
+            with patch('seeutoken.codex_usage.read_account', return_value=response):
+                service._refresh_account()
+            self.assertEqual(service.get(remote=False)['data']['resetCardsRemaining'], count)
 
     def test_default_interval_and_invalid_setting_fallback(self):
         service = CodexUsage(self.root)

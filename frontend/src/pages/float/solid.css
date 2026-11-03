@@ -70,7 +70,7 @@ html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-li
   text-shadow: none;
 }
 
-html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) :is(.donut-cap, .pop-donut-name, .pop-reset, .codex-reset-time, .pop-desc) {
+html .root:is([data-glass='light'], [data-glass='dark'], [data-glass^='liquid-light']) :is(.donut-cap, .pop-donut-name, .pop-reset, .quota-reset-time, .pop-desc) {
   color: var(--solid-secondary);
 }
 

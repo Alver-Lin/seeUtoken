@@ -20,6 +20,7 @@ def smoke_test(report):
     from . import __version__
     from .app import UI, ASSETS
     from .windows_float import apply_sidebar, hide_from_taskbar, taskbar_hidden
+    from .windows_float_dock import WindowsFloatDockController
 
     report = Path(report)
     result = {'ok': False, 'version': __version__}
@@ -41,7 +42,26 @@ def smoke_test(report):
                 })
                 result['windowRegion'] = window.native.Region is not None
                 result['sidebarTaskbarHidden'] = taskbar_hidden(window)
-                result['ok'] = result['javascript'] == 42 and result['windowRegion'] and result['sidebarTaskbarHidden']
+                dock = WindowsFloatDockController(settings={'floatAutoHide': True})
+                try:
+                    dock.attach(window)
+                    dock.set_visible(True)
+
+                    def check_docking():
+                        host = dock._host
+                        dock._dock('right', host.screens()[0])
+                        size = (host.frame.width, host.frame.height)
+                        dock._collapse()
+                        result['sidebarEdgeCollapsed'] = not host.visible() and host.visible(handle=True)
+                        dock._reveal()
+                        result['sidebarEdgeRevealed'] = host.visible() and not host.visible(handle=True)
+                        result['sidebarSizePreserved'] = size == (host.frame.width, host.frame.height)
+                    dock._dispatch(check_docking)
+                finally:
+                    dock.dispose()
+                result['ok'] = result['javascript'] == 42 and all(result.get(key) for key in (
+                    'windowRegion', 'sidebarTaskbarHidden', 'sidebarEdgeCollapsed',
+                    'sidebarEdgeRevealed', 'sidebarSizePreserved'))
             except Exception as exc:
                 result['error'] = str(exc)
             finally:

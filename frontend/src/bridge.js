@@ -144,6 +144,15 @@ export const seeUtoken = {
   },
   refreshUsage: () => triggerUsageRefresh(),
   getHeatmap: (year) => call('get_heatmap', Number(year)),
+  getSummaryUsage: async (year = new Date().getFullYear(), refresh = false) => {
+    if (window.location.hostname === '127.0.0.1') {
+      const query = new URLSearchParams({ year: String(year), refresh: refresh ? '1' : '0' });
+      const response = await fetch(`/api/summary-usage?${query}`, { signal: AbortSignal.timeout(60000) });
+      if (!response.ok) throw new Error('汇总记录读取失败');
+      return response.json();
+    }
+    return call('get_summary_usage', year, refresh);
+  },
   getSettings: () => call('get_settings'),
   setSettings: (settings) => call('set_settings', settings || {}),
   getNativeMaterialState: () => call('get_native_material_state'),

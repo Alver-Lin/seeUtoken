@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from .heatmap import aggregate_days_from_events, build_year_grid
+from .heatmap import aggregate_days_from_events, build_year_grid, recent_daily_usage
 from . import __version__
 from .process_utils import background_process_options
 
@@ -349,6 +349,11 @@ class CodexUsage:
             observed, limits = max(snapshots, key=lambda s: s[0], default=(0, {}))
             account = self._remote.get("account") or {}
             remote_at = self._remote.get("updatedAt", 0)
+            # The count is authoritative; the service may omit or cap detail rows.
+            reset_credits = (self._remote.get("limits") or {}).get("rateLimitResetCredits")
+            reset_count = reset_credits.get("availableCount") if isinstance(reset_credits, dict) else None
+            if type(reset_count) is not int or reset_count < 0:
+                reset_count = None
             if remote_at >= observed and self._remote.get("limits"):
                 result = self._remote["limits"]
                 limits = result.get("rateLimitsByLimitId", {}).get("codex") or result.get("rateLimits") or {}
@@ -372,19 +377,22 @@ class CodexUsage:
                     item["calls"] += 1
                 models[period] = sorted(grouped.values(), key=lambda m: m["tokens"], reverse=True)
             windows = [window_data(limits.get(key), key, observed, now_ms) for key in ("primary", "secondary")]
+            days = aggregate_days_from_events(events)
             data = {"provider": "codex", "connected": bool(events or limits or account),
                     "tokenBasis": "uncached_input_output",
                     "autoRefreshMinutes": minutes,
                     "user": {"email": account.get("email"), "plan": account.get("planType") or limits.get("planType") or limits.get("plan_type")},
                     "windows": windows, "periods": periods, "quotaUpdatedAt": observed or None,
+                    "resetCardsRemaining": reset_count,
                     "quotaSource": "account" if observed == remote_at and remote_at else "snapshot",
                     "syncing": self._remote_running, "syncError": self._error,
                     "usageTokens": {p: item["tokens"] for p, item in periods.items()},
+                    "dailyUsage": recent_daily_usage(days, now),
                     "sessionCount": len({e["id"].split(":")[0] for e in events})}
             if not summary:
                 target_year = int(year or now.year)
                 if target_year < 1970 or target_year > 2100:
                     target_year = now.year
                 data.update(models=models, events=summarize_turns(events)[:200],
-                            heatmap=build_year_grid(target_year, aggregate_days_from_events(events)))
+                            heatmap=build_year_grid(target_year, days))
             return {"data": data, "updatedAt": now_ms}

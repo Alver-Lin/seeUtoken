@@ -66,7 +66,7 @@
             <DonutChart :size="168" :cutout="0.72" :segments="cursorPoolSegments" track="#e6ebf2">
               <template #center>
                 <div class="donut-value sm">{{ formatPercent(cursorRemainPct) }}</div>
-                <div class="donut-label">剩余</div>
+                <div class="donut-label">{{ needsLogin ? '未登录' : '剩余' }}</div>
               </template>
             </DonutChart>
             <div class="pool-donut-title">Cursor 模型</div>
@@ -75,7 +75,7 @@
             <DonutChart :size="168" :cutout="0.72" :segments="otherPoolSegments" track="#e6ebf2">
               <template #center>
                 <div class="donut-value sm">{{ formatPercent(otherRemainPct) }}</div>
-                <div class="donut-label">剩余</div>
+                <div class="donut-label">{{ needsLogin ? '未登录' : '剩余' }}</div>
               </template>
             </DonutChart>
             <div class="pool-donut-title">其余模型</div>
@@ -202,6 +202,7 @@ import { message } from 'ant-design-vue';
 import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import { seeUtoken } from '../../bridge';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
+import { cursorQuotaState } from '../../utils/cursorQuota';
 import DonutChart from '../../components/DonutChart.vue';
 import HeatmapBoard from '../../components/HeatmapBoard.vue';
 import UsageTrendBoard from '../../components/UsageTrendBoard.vue';
@@ -269,20 +270,6 @@ function periodsHasData(periods) {
   );
 }
 
-const quota = computed(
-  () =>
-    data.value?.quota || {
-      remaining: 0,
-      total: 0,
-      used: 0,
-      usedPercent: 0,
-      remainingPercent: 0,
-      autoPercent: 0,
-      apiPercent: 0,
-      gifted: 0,
-    }
-);
-
 function poolColor(usedPct) {
   const remain = Math.max(0, 100 - (Number(usedPct) || 0));
   const ratio = remain / 100;
@@ -296,8 +283,8 @@ function poolSegments(usedPct, color) {
   const remain = Math.max(0, 100 - used);
   if (used + remain <= 0) return [{ value: 1, color: 'transparent' }];
   return [
-    { value: remain || 0.0001, color },
-    { value: used || 0.0001, color: 'transparent' },
+    { value: remain, color },
+    { value: used, color: 'transparent' },
   ];
 }
 
@@ -314,14 +301,11 @@ const cycleLabel = computed(() => {
 
 const resetAt = computed(() => data.value?.cycle?.resetAt || data.value?.cycle?.end || null);
 
-const cursorUsedPct = computed(
-  () => Number(quota.value.cursorModelsPercent ?? quota.value.autoPercent) || 0
-);
-const otherUsedPct = computed(
-  () => Number(quota.value.otherModelsPercent ?? quota.value.apiPercent) || 0
-);
-const cursorRemainPct = computed(() => Math.max(0, 100 - cursorUsedPct.value));
-const otherRemainPct = computed(() => Math.max(0, 100 - otherUsedPct.value));
+const cursorQuota = computed(() => cursorQuotaState(data.value, authRequired.value));
+const cursorUsedPct = computed(() => cursorQuota.value.cursorUsedPercent);
+const otherUsedPct = computed(() => cursorQuota.value.otherUsedPercent);
+const cursorRemainPct = computed(() => cursorQuota.value.cursorRemainingPercent);
+const otherRemainPct = computed(() => cursorQuota.value.otherRemainingPercent);
 
 const cursorPoolSegments = computed(() =>
   poolSegments(cursorUsedPct.value, poolColor(cursorUsedPct.value))
