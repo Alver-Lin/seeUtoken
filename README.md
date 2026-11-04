@@ -1,12 +1,6 @@
 <div align="center">
 
 ![](https://github.com/Alver-Lin/seeUtoken/blob/main/docs/images/seeutoken-brand-dark-1200.png)
-# seeUtoken
-
-**让 Cursor 与 Codex 的额度和 Token 用量，一眼可见。**
-
-模型额度首页 · 汇总记录 · 桌面侧边栏 · 年度热力图
-
 ![macOS](https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-6366f1)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11%20x64-0078D4?logo=windows&logoColor=white)
@@ -14,6 +8,8 @@
 ![Vue](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)
 
 </div>
+
+## demo展示
 
 ![seeUtoken 展示预览：模型额度首页、Liquid Glass 外观与桌面侧边栏](https://github.com/Alver-Lin/seeUtoken/blob/main/docs/images/desk-preview.png)
 
