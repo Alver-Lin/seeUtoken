@@ -1,6 +1,6 @@
 <div align="center">
 
-![](https://github.com/Alver-Lin/seeUtoken/blob/main/docs/images/seeutoken-brand-dark-1200.png)
+![](https://github.com/Alver-Lin/seeUtoken/blob/main/docs/images/seeutoken-brand-dark-200.png)
 ![macOS](https://img.shields.io/badge/macOS-14%2B-111827?logo=apple&logoColor=white)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-arm64-6366f1)
 ![Windows](https://img.shields.io/badge/Windows-10%2F11%20x64-0078D4?logo=windows&logoColor=white)
