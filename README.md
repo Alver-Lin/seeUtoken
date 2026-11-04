@@ -1,7 +1,6 @@
 <div align="center">
 
-<img src="assets/icon.png?v=paper-native-20261029" alt="seeUtoken 层叠纸艺图标" width="112" />
-
+![](https://github.com/Alver-Lin/seeUtoken/blob/main/docs/images/seeutoken-brand-dark-1200.png)
 # seeUtoken
 
 **让 Cursor 与 Codex 的额度和 Token 用量，一眼可见。**
