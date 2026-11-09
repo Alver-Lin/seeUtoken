@@ -1,8 +1,9 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { seeUtoken } from '../bridge';
 import { formatPercent } from './format';
+import { QUOTA_REMAIN_COLORS, remainingQuotaColor } from './quotaColor';
 
-export const CODEX_COLORS = ['#10a37f', '#1677ff'];
+export const CODEX_COLORS = [QUOTA_REMAIN_COLORS.full, QUOTA_REMAIN_COLORS.high];
 export function codexPlanLabel(plan, syncing = false) {
   const value = String(plan || '').trim();
   if (!value) return syncing ? '同步中…' : '套餐未知';
@@ -11,10 +12,10 @@ export function codexPlanLabel(plan, syncing = false) {
 export function quotaText(window) {
   return window?.remainingPercent == null ? '—' : formatPercent(window.remainingPercent);
 }
-export function quotaSegments(window, index = 0, track = '#e6ebf2') {
+export function quotaSegments(window, _index = 0, track = '#e6ebf2') {
   if (window?.remainingPercent == null) return [{ value: 1, color: track }];
   const remaining = window.remainingPercent;
-  const color = remaining < 10 ? '#ff4d4f' : remaining < 20 ? '#fa8c16' : CODEX_COLORS[index % 2];
+  const color = remainingQuotaColor(remaining);
   return [{ value: remaining, color }, { value: 100 - remaining, color: track }];
 }
 

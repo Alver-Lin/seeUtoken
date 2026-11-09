@@ -40,7 +40,7 @@
                   <div class="donut-pct">
                     <AnimatedMetric :value="cursorRemainPct" mode="percent" />
                   </div>
-                  <div class="donut-cap">{{ cursorQuota.connected ? '剩余' : '未登录' }}</div>
+                  <div v-if="!cursorQuota.connected" class="donut-cap">未登录</div>
                 </template>
               </DonutChart>
               <div class="pop-donut-name">Cursor 模型</div>
@@ -56,7 +56,7 @@
                   <div class="donut-pct">
                     <AnimatedMetric :value="otherRemainPct" mode="percent" />
                   </div>
-                  <div class="donut-cap">{{ cursorQuota.connected ? '剩余' : '未登录' }}</div>
+                  <div v-if="!cursorQuota.connected" class="donut-cap">未登录</div>
                 </template>
               </DonutChart>
               <div class="pop-donut-name">其余模型</div>
@@ -83,7 +83,10 @@
             <div class="pop-donuts">
               <div v-for="(item, i) in codexWindows" :key="item.id" class="pop-donut">
                 <DonutChart :size="108" :cutout="0.72" :segments="quotaSegments(item, i, 'transparent')" :track="donutTrack" rounded-caps>
-                  <template #center><div class="donut-pct">{{ quotaText(item) }}</div><div class="donut-cap">{{ item.stale ? '待更新' : '剩余' }}</div></template>
+                  <template #center>
+                    <div class="donut-pct">{{ quotaText(item) }}</div>
+                    <div v-if="item.stale" class="donut-cap">待更新</div>
+                  </template>
                 </DonutChart>
                 <div class="pop-donut-name">{{ item.label }}</div>
               </div>
@@ -177,6 +180,7 @@ import { installNativeMaterialHook } from '../../utils/nativeMaterial';
 import { quotaText, quotaSegments, useCodexUsage } from '../../utils/codex';
 import { popupPlacement } from './popupPlacement';
 import { createRailDrag } from './railDrag';
+import { remainingQuotaColor } from '../../utils/quotaColor';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
 import { cursorQuotaState, isCursorAuthError } from '../../utils/cursorQuota';
 
@@ -187,7 +191,7 @@ const BALL_C = 2 * Math.PI * 26;
 const DEFAULT_PANEL_TYPES = ['cursor', 'codex', 'qoder'];
 
 const PROVIDER_META = {
-  cursor: { id: 'cursor', name: 'Cursor', color: '#34d399', logo: cursorLogo, live: true },
+  cursor: { id: 'cursor', name: 'Cursor', color: '#10a37f', logo: cursorLogo, live: true },
   codex: { id: 'codex', name: 'Codex', color: '#10a37f', logo: codexLogo, live: true },
   qoder: { id: 'qoder', name: 'Qoder', color: '#12c26a', logo: qoderLogo, live: false },
 };
@@ -274,7 +278,22 @@ useNativeGlassShape({
 });
 
 const visibleServices = computed(() =>
-  panelTypes.value.map((id) => PROVIDER_META[id]).filter(Boolean)
+  panelTypes.value
+    .map((id) => PROVIDER_META[id])
+    .filter(Boolean)
+    .map((svc) => {
+      if (svc.id === 'cursor') {
+        return { ...svc, color: remainingQuotaColor(cursorQuota.value.cursorRemainingPercent) };
+      }
+      if (svc.id === 'codex') {
+        const remain = codexData.value?.windows?.[0]?.remainingPercent;
+        return {
+          ...svc,
+          color: remain == null ? PROVIDER_META.codex.color : remainingQuotaColor(remain),
+        };
+      }
+      return svc;
+    })
 );
 
 const primaryMeta = computed(() => visibleServices.value[0] || PROVIDER_META.cursor);
@@ -300,8 +319,12 @@ const otherPct = computed(() => cursorQuota.value.otherUsedPercent);
 const cursorRemainPct = computed(() => cursorQuota.value.cursorRemainingPercent);
 const otherRemainPct = computed(() => cursorQuota.value.otherRemainingPercent);
 
-const cursorDonutSegments = computed(() => usedDonutSegments(cursorPct.value, '#34d399'));
-const otherDonutSegments = computed(() => usedDonutSegments(otherPct.value, '#a78bfa'));
+const cursorDonutSegments = computed(() =>
+  usedDonutSegments(cursorPct.value, remainingQuotaColor(cursorRemainPct.value))
+);
+const otherDonutSegments = computed(() =>
+  usedDonutSegments(otherPct.value, remainingQuotaColor(otherRemainPct.value))
+);
 
 function poolTodayTokens(pool) {
   const data = usageData.value;

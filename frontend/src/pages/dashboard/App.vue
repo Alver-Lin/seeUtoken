@@ -203,6 +203,7 @@ import { ArrowLeftOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import { seeUtoken } from '../../bridge';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
 import { cursorQuotaState } from '../../utils/cursorQuota';
+import { remainingQuotaColor } from '../../utils/quotaColor';
 import DonutChart from '../../components/DonutChart.vue';
 import HeatmapBoard from '../../components/HeatmapBoard.vue';
 import UsageTrendBoard from '../../components/UsageTrendBoard.vue';
@@ -270,14 +271,6 @@ function periodsHasData(periods) {
   );
 }
 
-function poolColor(usedPct) {
-  const remain = Math.max(0, 100 - (Number(usedPct) || 0));
-  const ratio = remain / 100;
-  if (ratio <= 0) return '#ff4d4f';
-  if (ratio < 0.2) return '#fa8c16';
-  return '#1677ff';
-}
-
 function poolSegments(usedPct, color) {
   const used = Math.min(100, Math.max(0, Number(usedPct) || 0));
   const remain = Math.max(0, 100 - used);
@@ -308,10 +301,10 @@ const cursorRemainPct = computed(() => cursorQuota.value.cursorRemainingPercent)
 const otherRemainPct = computed(() => cursorQuota.value.otherRemainingPercent);
 
 const cursorPoolSegments = computed(() =>
-  poolSegments(cursorUsedPct.value, poolColor(cursorUsedPct.value))
+  poolSegments(cursorUsedPct.value, remainingQuotaColor(cursorRemainPct.value))
 );
 const otherPoolSegments = computed(() =>
-  poolSegments(otherUsedPct.value, poolColor(otherUsedPct.value) === '#1677ff' ? '#13c2c2' : poolColor(otherUsedPct.value))
+  poolSegments(otherUsedPct.value, remainingQuotaColor(otherRemainPct.value))
 );
 
 const models = computed(() => data.value?.models?.[period.value] || []);

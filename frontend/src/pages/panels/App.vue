@@ -267,6 +267,7 @@ import SummaryDashboard from './SummaryDashboard.vue';
 import { codexPlanLabel, quotaSegments, quotaText, useCodexUsage } from '../../utils/codex';
 import { formatPercent, formatTokens, formatTokensExact } from '../../utils/format';
 import { applyMainAppearance } from '../../utils/mainAppearance';
+import { remainingQuotaColor } from '../../utils/quotaColor';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
 import { cursorQuotaState, isCursorAuthError } from '../../utils/cursorQuota';
 import {
@@ -344,14 +345,6 @@ function providerLabel(provider) {
 
 function uid() {
   return `panel-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
-function poolColor(usedPct) {
-  const remain = Math.max(0, 100 - (Number(usedPct) || 0));
-  const ratio = remain / 100;
-  if (ratio <= 0) return '#ff4d4f';
-  if (ratio < 0.2) return '#fa8c16';
-  return '#1677ff';
 }
 
 function poolSegments(usedPct, color) {
@@ -480,11 +473,8 @@ function cardMeta(panel) {
     planText: membership,
     updatedText,
     connected: true,
-    cursorSegments: poolSegments(cursorUsed, poolColor(cursorUsed)),
-    otherSegments: poolSegments(
-      otherUsed,
-      poolColor(otherUsed) === '#1677ff' ? '#13c2c2' : poolColor(otherUsed)
-    ),
+    cursorSegments: poolSegments(cursorUsed, remainingQuotaColor(cursorRemain)),
+    otherSegments: poolSegments(otherUsed, remainingQuotaColor(otherRemain)),
     cursorRemainText: formatPercent(cursorRemain),
     otherRemainText: formatPercent(otherRemain),
     todayTokensText: tokenCountText(data, 'today'),

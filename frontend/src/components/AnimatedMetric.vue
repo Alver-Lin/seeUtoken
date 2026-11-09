@@ -19,7 +19,8 @@ let pulseTimer = null;
 
 function formatValue(n) {
   const v = Math.max(0, Number(n) || 0);
-  if (props.mode === 'percent') return `${v}${props.suffix || '%'}`;
+  // Percent labels stay whole numbers (Codex-style), never float residue like 98.8133…
+  if (props.mode === 'percent') return `${Math.round(v)}${props.suffix || '%'}`;
   if (props.mode === 'tokens') return formatTokens(v);
   if (props.mode === 'exact') return formatTokensExact(v);
   return `${v}${props.suffix || ''}`;
@@ -28,7 +29,8 @@ function formatValue(n) {
 const text = computed(() => formatValue(shown.value));
 
 function animateTo(target) {
-  const to = Math.max(0, Number(target) || 0);
+  const raw = Math.max(0, Number(target) || 0);
+  const to = props.mode === 'percent' ? Math.round(raw) : raw;
   const from = shown.value;
   cancelAnimationFrame(frame);
   if (from === to) {

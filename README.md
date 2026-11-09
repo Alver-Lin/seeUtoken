@@ -9,11 +9,13 @@
 
 ## 下载安装
 
-当前下载安装版本为 **v1.0.4**，发布于 **2026 年 11 月 3 日**，适用于 macOS 与 Windows。
+当前下载安装版本为 **v1.0.5**，发布于 **2026 年 11 月 9 日**，适用于 macOS 与 Windows。
 
-- **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.4.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.4/seeUtoken-V1.0.4.dmg)
-- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.4.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.4/seeUtoken-V1.0.4.exe)
+- **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.5.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.5/seeUtoken-V1.0.5.dmg)
+- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.5.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.5/seeUtoken-V1.0.5.exe)
 
+
+**v1.0.5 更新**：统一额度圆环配色（90%+ 绿色、50%+ 蓝色、10%+ 橙色、低于 10% 红色）；侧边百分比改为整数，并去掉圆环中的「剩余」提示。
 
 **v1.0.4 更新**：新增跨工具汇总记录、近 7 日用量图与真实 Cursor 模型调用次数；改进 Windows 贴边收起、Codex 重置卡展示和导航外观。
 
@@ -25,7 +27,7 @@ macOS 打开 DMG 后双击「安装 seeUtoken.pkg」；Windows 双击 EXE 按向
 
 **v1.0.3 更新**：修改Mac的更新下载逻辑，替换旧版的程序，更新至最新版，Windows同理
 
-[查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.4) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
+[查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.5) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
 
 ## seeUtoken 是什么？
 
