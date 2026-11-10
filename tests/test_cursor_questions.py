@@ -29,9 +29,9 @@ class CursorQuestionTests(unittest.TestCase):
 
     def conversation(self, cid='chat', text='第一条问题'):
         self.put('composerData:' + cid, {'fullConversationHeadersOnly': [
-            {'bubbleId': 'one', 'type': 1, 'startedAtMs': 1000},
-            {'bubbleId': 'assistant', 'type': 2, 'startedAtMs': 2000},
-            {'bubbleId': 'two', 'type': 1, 'startedAtMs': 3000},
+            {'bubbleId': 'one', 'type': 1, 'startedAtMs': 1_000_000},
+            {'bubbleId': 'assistant', 'type': 2, 'startedAtMs': 1_030_000},
+            {'bubbleId': 'two', 'type': 1, 'startedAtMs': 2_000_000},
         ]})
         self.put(f'bubbleId:{cid}:one', {'type': 1, 'text': text, 'context': 'PRIVATE CONTEXT'})
         self.put(f'bubbleId:{cid}:assistant', {'type': 2, 'text': 'PRIVATE ASSISTANT'})
@@ -41,8 +41,8 @@ class CursorQuestionTests(unittest.TestCase):
         self.conversation()
         self.conversation('other', '另一个会话')
         events = [{'conversationId': cid, 'time': t, 'input': 12, 'output': 8, 'cache': 100, 'tokens': 20}
-                  for cid, t in [('chat', 999), ('chat', 1000), ('chat', 2999),
-                                 ('chat', 3000), ('other', 2000), ('missing', 3000)]]
+                  for cid, t in [('chat', 900_000), ('chat', 1_000_000), ('chat', 1_500_000),
+                                 ('chat', 2_000_000), ('other', 1_200_000), ('missing', 2_000_000)]]
         original = copy.deepcopy(events)
         rows = add_cursor_questions(events, self.path)
         self.assertEqual([r['prompt'] for r in rows], ['', '第一条问题', '第一条问题', '第二条问题', '另一个会话', ''])
@@ -72,9 +72,34 @@ class CursorQuestionTests(unittest.TestCase):
             conn.execute('DROP TABLE cursorDiskKV')
         self.assertEqual(add_cursor_questions(events, self.path)[0]['prompt'], '')
 
+    def test_agent_chats_without_headers_fall_back_to_user_bubbles(self):
+        # Newer agent composers keep empty headers; user prompts still live in bubble rows.
+        self.put('composerData:agent', {
+            'fullConversationHeadersOnly': [],
+            'conversationMap': {},
+            'isAgentic': True,
+        })
+        self.put('bubbleId:agent:one', {'type': 1, 'text': '重新启动开发环境', 'startedAtMs': 1_000_000})
+        self.put('bubbleId:agent:tool', {'type': 2, 'text': 'PRIVATE ASSISTANT', 'startedAtMs': 1_030_000})
+        self.put('bubbleId:agent:one/s:1', {'type': 1, 'text': 'PRIVATE STEP', 'startedAtMs': 1_040_000})
+        self.put('bubbleId:agent:note', {
+            'type': 1,
+            'text': '<timestamp>Monday, Nov 9, 2026, 2:00 PM (UTC+8)</timestamp>\n<system_notification>\nThe following task has finished.',
+            'startedAtMs': 1_050_000,
+        })
+        self.put('bubbleId:agent:two', {'type': 1, 'text': '会话内容消失了', 'startedAtMs': 2_000_000})
+        # 1_999_700 is 300ms before the next bubble — within the real-world skew window.
+        events = [{'conversationId': 'agent', 'time': t}
+                  for t in (900_000, 1_000_000, 1_500_000, 1_999_700, 2_000_000)]
+        self.assertEqual(
+            [r['prompt'] for r in add_cursor_questions(events, self.path)],
+            ['', '重新启动开发环境', '重新启动开发环境', '会话内容消失了', '会话内容消失了'],
+        )
+        self.assertNotIn('PRIVATE', json.dumps(add_cursor_questions(events, self.path)))
+
     def test_edited_questions_are_refreshed_and_full_text_is_preserved(self):
         self.conversation()
-        events = [{'conversationId': 'chat', 'time': 2000}]
+        events = [{'conversationId': 'chat', 'time': 1_200_000}]
         self.assertEqual(add_cursor_questions(events, self.path)[0]['prompt'], '第一条问题')
         text = '修改后的问题\n' + '长内容' * 1000
         self.put('bubbleId:chat:one', {'type': 1, 'text': text})

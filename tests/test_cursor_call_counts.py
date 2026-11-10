@@ -3,7 +3,14 @@ import unittest
 from datetime import datetime
 from unittest.mock import patch
 
-from seeutoken.api import ApiError, _apply_event_call_counts, _fetch_all_events, clear_heatmap_cache, enrich_usage_details
+from seeutoken.api import (
+    ApiError,
+    _apply_event_call_counts,
+    _fetch_all_events,
+    _fill_missing_periods_from_events,
+    clear_heatmap_cache,
+    enrich_usage_details,
+)
 
 
 class CursorCallCountTests(unittest.TestCase):
@@ -92,6 +99,35 @@ class CursorCallCountTests(unittest.TestCase):
             failed = enrich_usage_details({'_authCookie': 'test-cookie', 'user': {'id': 'test-user'}})
         self.assertIsNone(failed['models']['all'][0]['calls'])
         self.assertEqual(failed['periods']['all']['tokens'], 1200)
+
+    def test_empty_all_aggregate_is_rebuilt_from_complete_event_history(self):
+        # Cursor sometimes returns year-long aggregates with call totals but no model rows.
+        data = {
+            'limits': {'autoBucketModels': ['default']},
+            'periods': {
+                'today': {'calls': 1, 'tokens': 12, 'input': 10, 'output': 2, 'cache': 0},
+                'all': {'calls': 3, 'tokens': 0, 'input': 0, 'output': 0, 'cache': 0},
+            },
+            'models': {
+                'today': [{'model': 'auto', 'tokens': 12, 'input': 10, 'output': 2, 'cache': 0, 'calls': 1}],
+                'all': [],
+            },
+        }
+        events = [
+            {'time': 10, 'model': 'auto', 'input': 10, 'output': 2, 'cache': 0},
+            {'time': 20, 'model': 'auto', 'input': 30, 'output': 4, 'cache': 0},
+            {'time': 30, 'model': 'composer-2.5-fast', 'input': 5, 'output': 1, 'cache': 8},
+        ]
+        _fill_missing_periods_from_events(data, events, {'today': 25, 'all': 0}, 40)
+        self.assertEqual(data['periods']['today']['tokens'], 12)
+        self.assertEqual(len(data['models']['today']), 1)
+        self.assertEqual(data['periods']['all']['calls'], 3)
+        self.assertEqual(data['periods']['all']['tokens'], 52)
+        self.assertEqual(data['periods']['all']['cache'], 8)
+        self.assertEqual([row['model'] for row in data['models']['all']], ['auto', 'composer-2.5-fast'])
+        self.assertEqual(data['models']['all'][0]['pool'], 'cursor')
+        self.assertEqual(data['models']['all'][0]['tokens'], 46)
+        self.assertEqual(data['models']['all'][1]['tokens'], 6)
 
 
 if __name__ == '__main__':

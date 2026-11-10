@@ -271,6 +271,40 @@ function periodsHasData(periods) {
   );
 }
 
+function periodHasTokenUsage(period) {
+  return !!(period && (Number(period.tokens) > 0 || Number(period.input) > 0 || Number(period.output) > 0));
+}
+
+function mergeModelsByPeriod(previous, incoming) {
+  const prev = previous && typeof previous === 'object' ? previous : {};
+  const next = incoming && typeof incoming === 'object' ? incoming : {};
+  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+  const merged = {};
+  for (const key of keys) {
+    const incomingList = Array.isArray(next[key]) ? next[key] : [];
+    const previousList = Array.isArray(prev[key]) ? prev[key] : [];
+    // Keep a known period when a refresh returns an empty model list for that range.
+    merged[key] = incomingList.length ? incomingList : previousList;
+  }
+  return merged;
+}
+
+function mergePeriodsByKey(previous, incoming) {
+  const prev = previous && typeof previous === 'object' ? previous : {};
+  const next = incoming && typeof incoming === 'object' ? incoming : {};
+  const keys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+  const merged = {};
+  for (const key of keys) {
+    const incomingPeriod = next[key];
+    const previousPeriod = prev[key];
+    merged[key] =
+      periodHasTokenUsage(incomingPeriod) || !periodHasTokenUsage(previousPeriod)
+        ? incomingPeriod
+        : previousPeriod;
+  }
+  return merged;
+}
+
 function poolSegments(usedPct, color) {
   const used = Math.min(100, Math.max(0, Number(usedPct) || 0));
   const remain = Math.max(0, 100 - used);
@@ -456,17 +490,15 @@ function applyPayload(res) {
       return;
     }
 
-    // partial / 空明细：保留旧的模型与使用记录，避免刷新时页面被清空
+    // partial / 空明细：按时段保留旧的模型与使用记录，避免「全部」被空聚合刷掉
     if (data.value && !data.value.demo && !incoming.demo) {
-      const keepModels = !modelsHasData(incoming.models) && modelsHasData(data.value.models);
       const keepEvents = !(incoming.events || []).length && (data.value.events || []).length;
-      const keepPeriods = !periodsHasData(incoming.periods) && periodsHasData(data.value.periods);
       data.value = {
         ...data.value,
         ...incoming,
-        models: keepModels ? data.value.models : incoming.models,
+        models: mergeModelsByPeriod(data.value.models, incoming.models),
         events: keepEvents ? data.value.events : incoming.events,
-        periods: keepPeriods ? data.value.periods : incoming.periods,
+        periods: mergePeriodsByKey(data.value.periods, incoming.periods),
         heatmap: incoming.heatmap || data.value.heatmap,
       };
     } else {

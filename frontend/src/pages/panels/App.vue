@@ -89,6 +89,7 @@
               >
                 <template #center>
                   <div class="pool-pct">{{ cardMeta(panel).cursorRemainText }}</div>
+                  <div class="pool-cap">{{ panel.type === 'codex' && codexData?.windows?.[0]?.stale ? '待更新' : '剩余' }}</div>
                 </template>
               </DonutChart>
               <div class="pool-name">{{ panel.type === 'codex' ? codexData?.windows?.[0]?.label || '短期额度' : 'Cursor 模型' }}</div>
@@ -103,6 +104,7 @@
               >
                 <template #center>
                   <div class="pool-pct">{{ cardMeta(panel).otherRemainText }}</div>
+                  <div class="pool-cap">{{ panel.type === 'codex' && codexData?.windows?.[1]?.stale ? '待更新' : '剩余' }}</div>
                 </template>
               </DonutChart>
               <div class="pool-name">{{ panel.type === 'codex' ? codexData?.windows?.[1]?.label || '长期额度' : '其余模型' }}</div>
@@ -1043,6 +1045,14 @@ onUnmounted(() => {
   font-size: 16px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.pool-cap {
+  margin-top: 2px;
+  color: var(--sut-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 600;
   line-height: 1;
 }
 

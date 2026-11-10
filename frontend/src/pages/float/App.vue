@@ -37,10 +37,8 @@
                 :track="donutTrack"
               >
                 <template #center>
-                  <div class="donut-pct">
-                    <AnimatedMetric :value="cursorRemainPct" mode="percent" />
-                  </div>
-                  <div v-if="!cursorQuota.connected" class="donut-cap">未登录</div>
+                  <div class="donut-pct">{{ formatPercent(cursorRemainPct) }}</div>
+                  <div class="donut-cap">{{ cursorQuota.connected ? '剩余' : '未登录' }}</div>
                 </template>
               </DonutChart>
               <div class="pop-donut-name">Cursor 模型</div>
@@ -53,10 +51,8 @@
                 :track="donutTrack"
               >
                 <template #center>
-                  <div class="donut-pct">
-                    <AnimatedMetric :value="otherRemainPct" mode="percent" />
-                  </div>
-                  <div v-if="!cursorQuota.connected" class="donut-cap">未登录</div>
+                  <div class="donut-pct">{{ formatPercent(otherRemainPct) }}</div>
+                  <div class="donut-cap">{{ cursorQuota.connected ? '剩余' : '未登录' }}</div>
                 </template>
               </DonutChart>
               <div class="pop-donut-name">其余模型</div>
@@ -85,7 +81,7 @@
                 <DonutChart :size="108" :cutout="0.72" :segments="quotaSegments(item, i, 'transparent')" :track="donutTrack" rounded-caps>
                   <template #center>
                     <div class="donut-pct">{{ quotaText(item) }}</div>
-                    <div v-if="item.stale" class="donut-cap">待更新</div>
+                    <div class="donut-cap">{{ item.stale ? '待更新' : '剩余' }}</div>
                   </template>
                 </DonutChart>
                 <div class="pop-donut-name">{{ item.label }}</div>
@@ -180,6 +176,7 @@ import { installNativeMaterialHook } from '../../utils/nativeMaterial';
 import { quotaText, quotaSegments, useCodexUsage } from '../../utils/codex';
 import { popupPlacement } from './popupPlacement';
 import { createRailDrag } from './railDrag';
+import { formatPercent } from '../../utils/format';
 import { remainingQuotaColor } from '../../utils/quotaColor';
 import { tokenBasisLabel } from '../../utils/tokenAccounting';
 import { cursorQuotaState, isCursorAuthError } from '../../utils/cursorQuota';

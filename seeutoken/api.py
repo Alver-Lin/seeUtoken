@@ -399,6 +399,96 @@ def _apply_event_call_counts(data: dict, events: list[dict], starts: dict[str, i
                 model['calls'] = counts.get(model['model'], 0)
 
 
+def _period_missing_token_usage(period: dict | None, models: list | None) -> bool:
+    """True when aggregated model rows are empty or token totals are missing."""
+    if models:
+        return False
+    if not isinstance(period, dict):
+        return True
+    return int(period.get('tokens') or 0) <= 0 and int(period.get('input') or 0) <= 0
+
+
+def _models_and_period_from_events(
+    events: list[dict],
+    start_ms: int,
+    end_ms: int,
+    auto_bucket: set[str] | None = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Rebuild a period summary from complete filtered-usage history."""
+    selected = [event for event in events if start_ms <= int(event.get('time') or 0) <= end_ms]
+    period = _empty_period()
+    period['calls'] = len(selected)
+    merged: dict[str, dict[str, Any]] = {}
+    for event in selected:
+        model = _model_display_name(event.get('model'))
+        inp = int(event.get('input') or 0)
+        out = int(event.get('output') or 0)
+        cache = int(event.get('cache') or 0)
+        row = merged.setdefault(
+            model,
+            {
+                'model': model,
+                'pool': _model_pool(model, auto_bucket),
+                'cost': 0.0,
+                'tokens': 0,
+                'processedTokens': 0,
+                'calls': 0,
+                'input': 0,
+                'output': 0,
+                'cache': 0,
+            },
+        )
+        row['input'] += inp
+        row['output'] += out
+        row['cache'] += cache
+        row['calls'] += 1
+        row['tokens'] = row['input'] + row['output']
+        row['processedTokens'] = row['tokens'] + row['cache']
+        period['input'] += inp
+        period['output'] += out
+        period['cache'] += cache
+    period['tokens'] = period['input'] + period['output']
+    period['processedTokens'] = period['tokens'] + period['cache']
+    rows = list(merged.values())
+    token_total = sum(row['tokens'] for row in rows) or 1
+    for row in rows:
+        row['percent'] = (row['tokens'] / token_total) * 100
+        row['costPercent'] = 0.0
+    rows.sort(key=lambda item: item['tokens'], reverse=True)
+    return period, rows
+
+
+def _fill_missing_periods_from_events(
+    data: dict,
+    events: list[dict],
+    starts: dict[str, int],
+    end_ms: int,
+) -> None:
+    """Cursor's year-long aggregate sometimes returns call totals without model rows."""
+    auto_bucket = {
+        str(item).strip().lower()
+        for item in ((data.get('limits') or {}).get('autoBucketModels') or [])
+        if item
+    }
+    periods = data.setdefault('periods', {})
+    models = data.setdefault('models', {})
+    for period, start_ms in starts.items():
+        current_models = models.get(period) or []
+        current_period = periods.get(period)
+        if not _period_missing_token_usage(current_period, current_models):
+            continue
+        filled_period, filled_models = _models_and_period_from_events(
+            events, start_ms, end_ms, auto_bucket
+        )
+        if not filled_models:
+            continue
+        # Keep a verified call total when the aggregate already reported one.
+        if isinstance(current_period, dict) and current_period.get('calls') is not None:
+            filled_period['calls'] = current_period['calls']
+        periods[period] = filled_period
+        models[period] = filled_models
+
+
 def fetch_heatmap_for_year(
     year: int,
     manual_token: str | None = None,
@@ -832,6 +922,7 @@ def enrich_usage_details(data: dict[str, Any]) -> dict[str, Any]:
     call_events = results.get('callEvents')
     if call_events is not None:
         _apply_event_call_counts(composed, call_events, starts, now)
+        _fill_missing_periods_from_events(composed, call_events, starts, now)
         heatmap = build_year_grid(datetime.now().year, aggregate_days_from_events(call_events))
         composed['heatmap'] = heatmap
         _heatmap_cache[str(heatmap['year'])] = heatmap
