@@ -35,6 +35,7 @@
                 :cutout="0.72"
                 :segments="cursorDonutSegments"
                 :track="donutTrack"
+                rounded-caps
               >
                 <template #center>
                   <div class="donut-pct">{{ formatPercent(cursorRemainPct) }}</div>
@@ -49,6 +50,7 @@
                 :cutout="0.72"
                 :segments="otherDonutSegments"
                 :track="donutTrack"
+                rounded-caps
               >
                 <template #center>
                   <div class="donut-pct">{{ formatPercent(otherRemainPct) }}</div>
@@ -302,12 +304,11 @@ const cursorPct = computed(() => cursorQuota.value.cursorUsedPercent);
 function usedDonutSegments(usedPct, color) {
   const used = Math.min(100, Math.max(0, Number(usedPct) || 0));
   const remain = Math.max(0, 100 - used);
-  const track = donutTrack.value;
-  if (used + remain <= 0) return [{ value: 1, color: track }];
-  // 灰色 = 已用，彩色 = 剩余（与首页额度卡片一致）
+  // 与 Codex quotaSegments 一致：剩余为 100% 时不插入假缺口，圆环闭环
+  if (used + remain <= 0) return [{ value: 1, color: 'transparent' }];
   return [
-    { value: used, color: track },
     { value: remain, color },
+    { value: used, color: 'transparent' },
   ];
 }
 

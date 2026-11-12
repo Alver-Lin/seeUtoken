@@ -84,7 +84,7 @@
                 :size="112"
                 :cutout="0.72"
                 :segments="cardMeta(panel).cursorSegments"
-                :rounded-caps="panel.type === 'codex'"
+                rounded-caps
                 track="#e6ebf2"
               >
                 <template #center>
@@ -99,7 +99,7 @@
                 :size="112"
                 :cutout="0.72"
                 :segments="cardMeta(panel).otherSegments"
-                :rounded-caps="panel.type === 'codex'"
+                rounded-caps
                 track="#e6ebf2"
               >
                 <template #center>
@@ -352,10 +352,11 @@ function uid() {
 function poolSegments(usedPct, color) {
   const used = Math.min(100, Math.max(0, Number(usedPct) || 0));
   const remain = Math.max(0, 100 - used);
+  // 与 Codex 一致：100% 剩余时不留假缺口，圆环闭环
   if (used + remain <= 0) return [{ value: 1, color: 'transparent' }];
   return [
-    { value: remain || 0.0001, color },
-    { value: used || 0.0001, color: 'transparent' },
+    { value: remain, color },
+    { value: used, color: 'transparent' },
   ];
 }
 

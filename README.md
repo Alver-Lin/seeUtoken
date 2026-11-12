@@ -9,11 +9,13 @@
 
 ## 下载安装
 
-当前下载安装版本为 **v1.0.6**，发布于 **2026 年 11 月 10 日**，适用于 macOS 与 Windows。
+当前下载安装版本为 **v1.0.7**，发布于 **2026 年 11 月 12 日**，适用于 macOS 与 Windows。
 
-- **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.6.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.6/seeUtoken-V1.0.6.dmg)
-- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.6.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.6/seeUtoken-V1.0.6.exe)
+- **macOS 14+ / Apple Silicon**：[下载 seeUtoken-V1.0.7.dmg](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.7/seeUtoken-V1.0.7.dmg)
+- **Windows 10/11 x64**：[下载 seeUtoken-V1.0.7.exe](https://github.com/Alver-Lin/seeUtoken/releases/download/v1.0.7/seeUtoken-V1.0.7.exe)
 
+
+**v1.0.7 更新**：Cursor 额度圆环对齐 Codex（圆角端点、100% 完整闭环）；侧边弹窗、首页卡片与详情页样式一致。
 
 **v1.0.6 更新**：修复 Agent 会话内容为空、「全部」时段与汇总记录偶发缺少 Cursor 模型用量；首页与侧边圆环恢复「剩余」提示。
 
@@ -29,7 +31,7 @@ macOS 打开 DMG 后双击「安装 seeUtoken.pkg」；Windows 双击 EXE 按向
 
 **v1.0.3 更新**：修改Mac的更新下载逻辑，替换旧版的程序，更新至最新版，Windows同理
 
-[查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.6) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
+[查看完整发布说明](https://github.com/Alver-Lin/seeUtoken/releases/tag/v1.0.7) · [浏览所有版本](https://github.com/Alver-Lin/seeUtoken/releases)
 
 ## seeUtoken 是什么？
 

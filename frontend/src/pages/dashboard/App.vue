@@ -63,7 +63,7 @@
         </header>
         <div class="pool-donuts">
           <div class="pool-donut">
-            <DonutChart :size="168" :cutout="0.72" :segments="cursorPoolSegments" track="#e6ebf2">
+            <DonutChart :size="168" :cutout="0.72" :segments="cursorPoolSegments" track="#e6ebf2" rounded-caps>
               <template #center>
                 <div class="donut-value sm">{{ formatPercent(cursorRemainPct) }}</div>
                 <div class="donut-label">{{ needsLogin ? '未登录' : '剩余' }}</div>
@@ -72,7 +72,7 @@
             <div class="pool-donut-title">Cursor 模型</div>
           </div>
           <div class="pool-donut">
-            <DonutChart :size="168" :cutout="0.72" :segments="otherPoolSegments" track="#e6ebf2">
+            <DonutChart :size="168" :cutout="0.72" :segments="otherPoolSegments" track="#e6ebf2" rounded-caps>
               <template #center>
                 <div class="donut-value sm">{{ formatPercent(otherRemainPct) }}</div>
                 <div class="donut-label">{{ needsLogin ? '未登录' : '剩余' }}</div>
